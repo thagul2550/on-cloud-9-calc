@@ -110,6 +110,13 @@
 </div>
 
 <div id="sumArea" style="display:none">
+  <div class="sum-card" style="position:relative; margin-bottom:1rem">
+    <div class="sum-hdr">
+      <span>ตารางเวลากิจกรรมทั้งหมด</span>
+    </div>
+    <div id="timelineRows"></div>
+  </div>
+
   <div class="sum-card">
     <div class="sum-hdr">
       <span>รายการที่เลือก</span>
@@ -139,6 +146,8 @@ const BOOTHS = [
   {id:"sns",    name:"SNS ลองอีฟรูปถ่ายไป",          short:"SNS Photo",  tickets:5},
   {id:"hill",   name:"บนเนินเขา (พัดกอล์ฟ)",        short:"บนเนินเขา",  tickets:1},
   {id:"ponytail",name:"Ponytail ผมทีพลิ้วสะบัดไป", short:"Ponytail",   tickets:1},
+  {id:"chabacha",name:"JABAJA CHA-BA-CHA ALL NIGHT LONG", short:"Cha-Ba-Cha", tickets:0},
+  {id:"fanmeet", name:"Fanmeet & Stage",            short:"Stage",      tickets:0},
 ];
 
 const SCHED = {
@@ -414,6 +423,57 @@ const SCHED = {
       ["19:30–20:30","Nammonn","Monet","Jingjing"],
     ],
   },
+  chabacha:{
+    "30 May 2026":[
+      ["14:30–15:30","Niya","Ginna","Nisha"],
+      ["15:30–16:30","Emmy","Sindy","Wawa"],
+      ["16:30–17:30","Jew","Neen","Proud"],
+      ["17:30–18:30","Pancake","Lingling","Prae"],
+      ["18:30–19:30","Monet","Hongyok","Mint"],
+      ["19:30–20:30","L","Khowjow","Inkcha"],
+    ],
+    "31 May 2026":[
+      ["10:30–11:30","Emma","Lewlew","Punpon"],
+      ["11:30–12:30","Fame","Saonoi","Rose"],
+      ["12:30–13:30","Chifa","Ploen","Valentine"],
+      ["13:30–14:30","Yoghurt","Else","Satangpound"],
+      ["14:30–15:30","Nammonn","Khaimook","Namphet"],
+      ["15:30–16:30","Janry","Prae","Tara"],
+      ["16:30–17:30","Berry","Marine","Hongyok"],
+      ["17:30–18:30","Palmmy","Khowjow","Inkcha"],
+      ["18:30–19:30","Micha","Shenae","Praifa"],
+      ["19:30–20:30","Blythe","Cartoon","Monet"],
+    ],
+    "1 June 2026":[
+      ["10:30–11:30","Janry","Wawa","Khaimook"],
+      ["11:30–12:30","Patt","Kwan","Nana"],
+      ["12:30–13:30","Arlee","Galeya","Lookked"],
+      ["13:30–14:30","Nall","Mayji","Praifa"],
+      ["14:30–15:30","Jingjing","Satangpound","L"],
+      ["15:30–16:30","Hoop","Saonoi","Proud"],
+      ["16:30–17:30","Luksorn","Berry","Grape"],
+      ["17:30–18:30","Praew","Mint","Mirin"],
+      ["18:30–19:30","Blythe","Cartoon","Lewlew"],
+      ["19:30–20:30","Grape","Mail","Jew"],
+    ]
+  },
+  fanmeet:{
+    "30 May 2026":[
+      ["11:30–13:30","⭐ กิจกรรมเวที","BNK48 6th Album First Performance (ALL)"],
+      ["17:30–19:30","⭐ กิจกรรมเวที","CGM48 2nd Gen & CGM48 5th Gen"],
+      ["20:30–21:00","⭐ กิจกรรมเวที","Thank You Session"]
+    ],
+    "31 May 2026":[
+      ["12:30–14:30","⭐ กิจกรรมเวที","BNK48 4th Gen"],
+      ["17:30–19:30","⭐ กิจกรรมเวที","BNK48 5th Gen"],
+      ["20:30–21:00","⭐ กิจกรรมเวที","Thank You Session"]
+    ],
+    "1 June 2026":[
+      ["12:30–14:30","⭐ กิจกรรมเวที","BNK48 6th Gen"],
+      ["17:30–19:30","⭐ กิจกรรมเวที","CGM48 3rd Gen & CGM48 4th Gen"],
+      ["20:30–21:00","⭐ กิจกรรมเวที","Thank You Session"]
+    ]
+  }
 };
 
 const DAYS = ["30 May 2026","31 May 2026","1 June 2026"];
@@ -541,6 +601,8 @@ function chQty(key,tickets,delta){
 function updateSum(){
   let total=0, totalTickets=0;
   const rows=[];
+  const timelineItemMap = {};
+
   Object.entries(state.selections).forEach(([key,qty])=>{
     if(qty===0) return;
     const [member,boothId,day,idxStr]=key.split('|');
@@ -549,18 +611,44 @@ function updateSum(){
     if(!booth) return;
     const slot=((SCHED[boothId]||{})[day]||[])[idx];
     if(!slot) return;
+    
     const t=booth.tickets*qty;
     const c=t*TICKET_PRICE;
     total+=c; totalTickets+=t;
-    rows.push({label:`${member} — ${booth.short} (${day}) ${slot[0]} ×${qty}`,t,c});
+    let costText = t > 0 ? `${t} tickets = ฿${c.toLocaleString()}` : `Free`;
+    rows.push({label:`${member} — ${booth.short} (${day}) ${slot[0]} ×${qty}`,t,c,costText});
+
+    if(!timelineItemMap[day]) timelineItemMap[day] = [];
+    timelineItemMap[day].push({
+      time: slot[0],
+      boothName: booth.short,
+      member: member,
+      qty: qty
+    });
   });
 
   document.getElementById('sumArea').style.display=rows.length>0?'block':'none';
   document.getElementById('sumRows').innerHTML=rows.map(r=>
-    `<div class="sum-row"><span>${r.label}</span><span>${r.t} tickets = ฿${r.c.toLocaleString()}</span></div>`
+    `<div class="sum-row"><span>${r.label}</span><span>${r.costText}</span></div>`
   ).join('');
   document.getElementById('totalAmt').textContent='฿'+total.toLocaleString();
   document.getElementById('ticketCount').textContent=`รวม ${totalTickets} tickets`;
+
+  let timelineHTML = '';
+  DAYS.forEach(day => {
+    if(timelineItemMap[day] && timelineItemMap[day].length > 0) {
+      timelineHTML += `<div style="font-size:12px;font-weight:600;color:#c4b5fd;margin:12px 0 6px;border-bottom:1px solid #2a2740;padding-bottom:4px;">${DAY_LABELS[day]}</div>`;
+      timelineItemMap[day].sort((a,b)=> a.time.localeCompare(b.time));
+      timelineItemMap[day].forEach(ti => {
+        timelineHTML += `<div class="sum-row" style="color:#ddd;padding:4px 0;">
+          <span style="flex:0 0 85px;color:#888;">${ti.time.split('–')[0] || ti.time}</span>
+          <span>${ti.boothName}</span>
+          <span style="color:#a89fd4">${ti.member} ${ti.qty>1?'(×'+ti.qty+')':''}</span>
+        </div>`;
+      });
+    }
+  });
+  document.getElementById('timelineRows').innerHTML = timelineHTML;
 }
 
 function clearAll(){

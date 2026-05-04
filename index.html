@@ -484,12 +484,12 @@ const DAY_LABELS = {
 };
 
 const memberSet = new Set();
-Object.values(SCHED).forEach(bd=>{
-  Object.values(bd).forEach(slots=>{
+Object.keys(SCHED).forEach(boothId=>{
+  if (boothId === 'fanmeet') return;
+  Object.values(SCHED[boothId]).forEach(slots=>{
     slots.forEach(slot=>{ slot.slice(1).forEach(m=>memberSet.add(m)); });
   });
 });
-memberSet.delete("⭐ กิจกรรมเวที");
 const MEMBERS = [...memberSet].sort();
 
 let state = { member: null, selections: {}, curDay: "30 May 2026" };

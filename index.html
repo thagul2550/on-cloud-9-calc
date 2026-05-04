@@ -658,17 +658,23 @@ function updateSum(){
     const slot=((SCHED[boothId]||{})[day]||[])[idx];
     if(!slot) return;
     
+    let displayName = member;
+    if(member === "⭐ กิจกรรมเวที") {
+      const others = slot.slice(1).filter(m => m !== "⭐ กิจกรรมเวที");
+      if(others.length > 0) displayName = others.join(", ");
+    }
+
     const t=booth.tickets*qty;
     const c=t*TICKET_PRICE;
     total+=c; totalTickets+=t;
     let costText = t > 0 ? `${t} tickets = ฿${c.toLocaleString()}` : `Free`;
-    rows.push({label:`${member} — ${booth.short} (${day}) ${slot[0]} ×${qty}`,t,c,costText,key});
+    rows.push({label:`${displayName} — ${booth.short} (${day}) ${slot[0]} ×${qty}`,t,c,costText,key});
 
     if(!timelineItemMap[day]) timelineItemMap[day] = [];
     timelineItemMap[day].push({
       time: slot[0],
       boothName: booth.short,
-      member: member,
+      member: displayName,
       qty: qty,
       key: key
     });

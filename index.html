@@ -713,6 +713,7 @@ function updateSum(){
       if (tlFilterDay !== 'All' && tlFilterDay !== day) return;
       let eventsHTML = '';
       if(timelineItemMap[day]) {
+        let occupied = [];
         timelineItemMap[day].forEach(ti => {
           const [st, et] = ti.time.split('–');
           const toCol = (tStr) => {
@@ -722,6 +723,12 @@ function updateSum(){
           let sCol = toCol(st||ti.time);
           let eCol = st && et ? toCol(et) : sCol + 2; 
 
+          let r = 1;
+          while(occupied.some(o => o.row === r && !(eCol <= o.start || sCol >= o.end))) {
+            r++;
+          }
+          occupied.push({row: r, start: sCol, end: eCol});
+
           let memberColor = "#2d1f6e";
           let borderColor = "#6c5ce7";
           if(ti.boothName === "Stage") { memberColor = "#3b0764"; borderColor = "#a855f7"; }
@@ -729,7 +736,7 @@ function updateSum(){
           else if(ti.boothName === "SNS Photo") { memberColor = "#064e3b"; borderColor = "#f472b6"; }
 
           eventsHTML += `
-            <div class="event-pill" style="grid-column: ${sCol} / ${eCol}; background: ${memberColor}; border-color: ${borderColor};">
+            <div class="event-pill" style="grid-column: ${sCol} / ${eCol}; grid-row: ${r}; background: ${memberColor}; border-color: ${borderColor};">
               <div style="font-weight:700;font-size:11px;margin-bottom:2px">${ti.member} ${ti.qty>1?'(×'+ti.qty+')':''}</div>
               <div style="font-size:9px;opacity:0.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ti.boothName}</div>
               <button class="del-btn-abs" onclick="removeOrder('${ti.key}')">×</button>

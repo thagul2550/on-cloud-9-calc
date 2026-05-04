@@ -489,12 +489,19 @@ Object.values(SCHED).forEach(bd=>{
     slots.forEach(slot=>{ slot.slice(1).forEach(m=>memberSet.add(m)); });
   });
 });
+memberSet.delete("⭐ กิจกรรมเวที");
 const MEMBERS = [...memberSet].sort();
 
 let state = { member: null, selections: {}, curDay: "30 May 2026" };
 
 function initMembers(){
   const g = document.getElementById('mGrid');
+  
+  const stageBtn = document.createElement('button');
+  stageBtn.className='mbr-btn'; stageBtn.style.gridColumn = '1 / -1'; stageBtn.style.padding = '10px'; stageBtn.style.background = '#2c225a'; stageBtn.style.borderColor = '#4a3d8a'; stageBtn.style.color = '#fff'; stageBtn.textContent='⭐ กิจกรรมเวทีทั้งหมด (Fanmeet & Stage)'; stageBtn.id='mb-⭐ กิจกรรมเวที';
+  stageBtn.onclick=()=>selMember('⭐ กิจกรรมเวที');
+  g.appendChild(stageBtn);
+
   MEMBERS.forEach(m=>{
     const b = document.createElement('button');
     b.className='mbr-btn'; b.textContent=m; b.id='mb-'+m;
@@ -561,10 +568,16 @@ function renderSched(){
       const item=document.createElement('div');
       item.className='r-item'+(qty>0?' sel':'');
       item.id='bi-'+key.replace(/[\|]/g,'_');
+      
+      let rtText = `กับ ${others.join(', ')}`;
+      if (m === "⭐ กิจกรรมเวที" && booth.id === "fanmeet") {
+        rtText = others.join(', ');
+      }
+
       item.innerHTML=`
         <div style="flex:1;min-width:0">
           <div class="rn">${slot[0]}</div>
-          <div class="rt">กับ ${others.join(', ')}</div>
+          <div class="rt">${rtText}</div>
         </div>
         <div class="qty-w">
           <button class="qb" onclick="chQty('${key}',${booth.tickets},-1)">−</button>

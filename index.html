@@ -85,12 +85,12 @@
   /* Timeline Grid */
   .tl-container{overflow-x:auto;border:1px solid #2a2740;border-radius:8px;background:#1a1828;margin-top:10px}
   .tl-header{display:flex;border-bottom:1px solid #2a2740;background:#0f0f13}
-  .tl-day-lbl{width:60px;flex-shrink:0;padding:8px 4px;font-size:11px;font-weight:600;color:#aaa;border-right:1px solid #2a2740;display:flex;align-items:center;justify-content:center;text-align:center;word-break:break-word}
-  .tl-grid{flex:1;display:grid;grid-template-columns:repeat(21, minmax(42px, 1fr))}
+  .tl-day-lbl{width:60px;flex-shrink:0;padding:8px 4px;font-size:11px;font-weight:600;color:#aaa;border-right:1px solid #2a2740;display:flex;align-items:center;justify-content:center;text-align:center;word-break:break-word;background:#13111c}
+  .tl-grid{flex:1;display:grid;grid-template-columns:repeat(22, minmax(42px, 1fr))}
   .tl-time-lbl{font-size:10px;color:#666;padding:6px 4px;border-right:1px solid #2a2740;text-align:left}
   .tl-row{display:flex;border-bottom:1px solid #2a2740}
   .tl-row:last-child{border-bottom:none}
-  .tl-track{flex:1;display:grid;grid-template-columns:repeat(21, minmax(42px, 1fr));grid-auto-rows:min-content;gap:4px;padding:6px 4px}
+  .tl-track{flex:1;display:grid;grid-template-columns:repeat(22, minmax(42px, 1fr));grid-auto-rows:min-content;gap:4px;padding:6px 4px;background-image:repeating-linear-gradient(to right, transparent, transparent calc(100%/22 * 2 - 1px), #2a2740 calc(100%/22 * 2 - 1px), #2a2740 calc(100%/22 * 2))}
   .event-pill{background:#2d1f6e;border:1px solid #6c5ce7;border-radius:6px;color:#fff;font-size:10px;padding:5px 6px;line-height:1.3;position:relative;overflow:hidden;box-shadow:0 2px 4px rgba(0,0,0,0.3)}
   .event-pill:hover{filter:brightness(1.2);z-index:2}
   .del-btn-abs{position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.2);color:#ff6b6b;border-radius:4px;width:18px;height:18px;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1}
@@ -131,6 +131,7 @@
   <div class="sum-card" style="margin-bottom:1rem; padding:1rem 0;">
     <div class="sum-hdr" style="padding:0 1.25rem;">
       <span>ตารางเวลากิจกรรมทั้งหมด</span>
+      <div id="tlTabs" class="tab-row" style="margin:0;"></div>
     </div>
     <div id="timelineRows"></div>
   </div>
@@ -630,6 +631,18 @@ function chQty(key,tickets,delta){
   updateSum();
 }
 
+let tlFilterDay = 'All';
+
+function renderTlTabs() {
+  const tabsContainer = document.getElementById('tlTabs');
+  if(!tabsContainer) return '';
+  let html = `<button class="tab${tlFilterDay==='All'?' active':''}" onclick="tlFilterDay='All'; updateSum();" style="padding:3px 10px; font-size:11px">All Days</button>`;
+  DAYS.forEach(d => {
+    html += `<button class="tab${tlFilterDay===d?' active':''}" onclick="tlFilterDay='${d}'; updateSum();" style="padding:3px 10px; font-size:11px">${d.split(' ').slice(0, 2).join(' ')}</button>`;
+  });
+  return html;
+}
+
 function updateSum(){
   let total=0, totalTickets=0;
   const rows=[];
@@ -691,9 +704,13 @@ function updateSum(){
   DAYS.forEach(day => {
     if(timelineItemMap[day] && timelineItemMap[day].length > 0) hasTimeline = true;
   });
+  
+  const tabsContainer = document.getElementById('tlTabs');
+  if(tabsContainer) tabsContainer.innerHTML = renderTlTabs();
 
   if (hasTimeline) {
     DAYS.forEach(day => {
+      if (tlFilterDay !== 'All' && tlFilterDay !== day) return;
       let eventsHTML = '';
       if(timelineItemMap[day]) {
         timelineItemMap[day].forEach(ti => {

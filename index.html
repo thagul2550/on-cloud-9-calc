@@ -31,7 +31,9 @@
   .tab.active{background:#2d1f6e;border-color:#6c5ce7;color:#c4b5fd;font-weight:600}
 
   /* Day label */
-  .day-lbl-row{font-size:13px;color:#aaa;margin-bottom:10px;padding-left:2px}
+  .day-lbl-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#aaa;margin-bottom:10px;padding-left:2px}
+  .sel-all-btn{font-size:11px;color:#c4b5fd;background:#2d1f6e;border:1px solid #6c5ce7;border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'Sarabun',sans-serif;}
+  .sel-all-btn:hover{background:#3d2f8a}
 
   /* Booth block */
   .booth-block{border:1px solid #2a2740;border-radius:12px;padding:1rem 1.1rem;margin-bottom:10px;background:#16131f}
@@ -64,7 +66,9 @@
   .sum-hdr span{font-size:13px;font-weight:600;color:#e0d8ff}
   .clr-btn{font-size:11px;color:#666;cursor:pointer;border:none;background:none;text-decoration:underline;font-family:'Sarabun',sans-serif}
   .clr-btn:hover{color:#c4b5fd}
-  .sum-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#888;gap:8px}
+  .del-btn{color:#ff6b6b;cursor:pointer;background:none;border:none;font-size:14px;padding:0 6px;border-radius:4px;line-height:1}
+  .del-btn:hover{background:#3a1a1a}
+  .sum-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:3px 0;color:#888;gap:8px}
   .sum-row span:first-child{flex:1}
   .sum-row span:last-child{white-space:nowrap;color:#a89fd4}
   .sum-divider{border:none;border-top:1px solid #2a2740;margin:8px 0}
@@ -540,7 +544,8 @@ function renderSched(){
 
   const dayLbl = document.createElement('div');
   dayLbl.className='day-lbl-row';
-  dayLbl.textContent=DAY_LABELS[state.curDay];
+  dayLbl.innerHTML=`<span>${DAY_LABELS[state.curDay]}</span>
+    <button class="sel-all-btn" onclick="selectAllDay()">+ เลือกรอบทั้งหมดในหน้านี้</button>`;
   area.appendChild(dayLbl);
 
   let hasAny=false;
@@ -629,20 +634,21 @@ function updateSum(){
     const c=t*TICKET_PRICE;
     total+=c; totalTickets+=t;
     let costText = t > 0 ? `${t} tickets = ฿${c.toLocaleString()}` : `Free`;
-    rows.push({label:`${member} — ${booth.short} (${day}) ${slot[0]} ×${qty}`,t,c,costText});
+    rows.push({label:`${member} — ${booth.short} (${day}) ${slot[0]} ×${qty}`,t,c,costText,key});
 
     if(!timelineItemMap[day]) timelineItemMap[day] = [];
     timelineItemMap[day].push({
       time: slot[0],
       boothName: booth.short,
       member: member,
-      qty: qty
+      qty: qty,
+      key: key
     });
   });
 
   document.getElementById('sumArea').style.display=rows.length>0?'block':'none';
   document.getElementById('sumRows').innerHTML=rows.map(r=>
-    `<div class="sum-row"><span>${r.label}</span><span>${r.costText}</span></div>`
+    `<div class="sum-row"><span>${r.label}</span><div style="display:flex;align-items:center;"><span>${r.costText}</span><button class="del-btn" onclick="removeOrder('${r.key}')">×</button></div></div>`
   ).join('');
   document.getElementById('totalAmt').textContent='฿'+total.toLocaleString();
   document.getElementById('ticketCount').textContent=`รวม ${totalTickets} tickets`;
@@ -656,7 +662,7 @@ function updateSum(){
         timelineHTML += `<div class="sum-row" style="color:#ddd;padding:4px 0;">
           <span style="flex:0 0 85px;color:#888;">${ti.time.split('–')[0] || ti.time}</span>
           <span>${ti.boothName}</span>
-          <span style="color:#a89fd4">${ti.member} ${ti.qty>1?'(×'+ti.qty+')':''}</span>
+          <div style="display:flex;align-items:center;"><span style="color:#a89fd4">${ti.member} ${ti.qty>1?'(×'+ti.qty+')':''}</span><button class="del-btn" onclick="removeOrder('${ti.key}')">×</button></div>
         </div>`;
       });
     }
@@ -664,10 +670,44 @@ function updateSum(){
   document.getElementById('timelineRows').innerHTML = timelineHTML;
 }
 
+function removeOrder(key) {
+  state.selections[key] = 0;
+  if(state.member) {
+    const safeKey=key.replace(/[\|]/g,'_');
+    const qnEl=document.getElementById('qn-'+safeKey);
+    if(qnEl) qnEl.textContent=0;
+    const biEl=document.getElementById('bi-'+safeKey);
+    if(biEl) biEl.classList.remove('sel');
+  }
+  updateSum();
+}
+
 function clearAll(){
   state.selections={};
   if(state.member) renderSched();
   updateSum();
+}
+
+function selectAllDay(){
+  const m=state.member;
+  if(!m) return;
+  let changed=false;
+  BOOTHS.forEach(booth=>{
+    const slots=(SCHED[booth.id]||{})[state.curDay]||[];
+    slots.forEach((s,i)=>{
+      if(s.slice(1).includes(m)){
+        const key=getKey(m,booth.id,state.curDay,i);
+        if(!state.selections[key]){
+          state.selections[key]=1;
+          changed=true;
+        }
+      }
+    });
+  });
+  if(changed){
+    renderSched();
+    updateSum();
+  }
 }
 
 initMembers();

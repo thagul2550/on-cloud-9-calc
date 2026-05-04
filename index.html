@@ -82,6 +82,20 @@
   .empty-h{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;color:#555;font-size:13px;gap:8px;text-align:center}
   .empty-h .ico{font-size:36px;opacity:.5}
 
+  /* Timeline Grid */
+  .tl-container{overflow-x:auto;border:1px solid #2a2740;border-radius:8px;background:#1a1828;margin-top:10px}
+  .tl-header{display:flex;border-bottom:1px solid #2a2740;background:#0f0f13}
+  .tl-day-lbl{width:60px;flex-shrink:0;padding:8px 4px;font-size:11px;font-weight:600;color:#aaa;border-right:1px solid #2a2740;display:flex;align-items:center;justify-content:center;text-align:center;word-break:break-word}
+  .tl-grid{flex:1;display:grid;grid-template-columns:repeat(21, minmax(42px, 1fr))}
+  .tl-time-lbl{font-size:10px;color:#666;padding:6px 4px;border-right:1px solid #2a2740;text-align:left}
+  .tl-row{display:flex;border-bottom:1px solid #2a2740}
+  .tl-row:last-child{border-bottom:none}
+  .tl-track{flex:1;display:grid;grid-template-columns:repeat(21, minmax(42px, 1fr));grid-auto-rows:min-content;gap:4px;padding:6px 4px}
+  .event-pill{background:#2d1f6e;border:1px solid #6c5ce7;border-radius:6px;color:#fff;font-size:10px;padding:5px 6px;line-height:1.3;position:relative;overflow:hidden;box-shadow:0 2px 4px rgba(0,0,0,0.3)}
+  .event-pill:hover{filter:brightness(1.2);z-index:2}
+  .del-btn-abs{position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.2);color:#ff6b6b;border-radius:4px;width:18px;height:18px;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1}
+  .del-btn-abs:hover{background:#ff6b6b;color:#fff}
+
   /* Scrollbar */
   ::-webkit-scrollbar{width:6px}
   ::-webkit-scrollbar-track{background:#0f0f13}
@@ -114,8 +128,8 @@
 </div>
 
 <div id="sumArea" style="display:none">
-  <div class="sum-card" style="position:relative; margin-bottom:1rem">
-    <div class="sum-hdr">
+  <div class="sum-card" style="margin-bottom:1rem; padding:1rem 0;">
+    <div class="sum-hdr" style="padding:0 1.25rem;">
       <span>ตารางเวลากิจกรรมทั้งหมด</span>
     </div>
     <div id="timelineRows"></div>
@@ -653,21 +667,71 @@ function updateSum(){
   document.getElementById('totalAmt').textContent='฿'+total.toLocaleString();
   document.getElementById('ticketCount').textContent=`รวม ${totalTickets} tickets`;
 
-  let timelineHTML = '';
+  let timelineHTML = `
+    <div class="tl-container" style="border-left:none;border-right:none;border-radius:0;">
+      <div class="tl-header">
+        <div class="tl-day-lbl">Date</div>
+        <div class="tl-grid">
+          <div class="tl-time-lbl" style="grid-column: span 2">10:30</div>
+          <div class="tl-time-lbl" style="grid-column: span 2">11:30</div>
+          <div class="tl-time-lbl" style="grid-column: span 2">12:30</div>
+          <div class="tl-time-lbl" style="grid-column: span 2">13:30</div>
+          <div class="tl-time-lbl" style="grid-column: span 2">14:30</div>
+          <div class="tl-time-lbl" style="grid-column: span 2">15:30</div>
+          <div class="tl-time-lbl" style="grid-column: span 2">16:30</div>
+          <div class="tl-time-lbl" style="grid-column: span 2">17:30</div>
+          <div class="tl-time-lbl" style="grid-column: span 2">18:30</div>
+          <div class="tl-time-lbl" style="grid-column: span 2">19:30</div>
+          <div class="tl-time-lbl" style="grid-column: span 1; border-right:none;">20:30</div>
+        </div>
+      </div>
+  `;
+
+  let hasTimeline = false;
   DAYS.forEach(day => {
-    if(timelineItemMap[day] && timelineItemMap[day].length > 0) {
-      timelineHTML += `<div style="font-size:12px;font-weight:600;color:#c4b5fd;margin:12px 0 6px;border-bottom:1px solid #2a2740;padding-bottom:4px;">${DAY_LABELS[day]}</div>`;
-      timelineItemMap[day].sort((a,b)=> a.time.localeCompare(b.time));
-      timelineItemMap[day].forEach(ti => {
-        timelineHTML += `<div class="sum-row" style="color:#ddd;padding:4px 0;">
-          <span style="flex:0 0 85px;color:#888;">${ti.time.split('–')[0] || ti.time}</span>
-          <span>${ti.boothName}</span>
-          <div style="display:flex;align-items:center;"><span style="color:#a89fd4">${ti.member} ${ti.qty>1?'(×'+ti.qty+')':''}</span><button class="del-btn" onclick="removeOrder('${ti.key}')">×</button></div>
-        </div>`;
-      });
-    }
+    if(timelineItemMap[day] && timelineItemMap[day].length > 0) hasTimeline = true;
   });
-  document.getElementById('timelineRows').innerHTML = timelineHTML;
+
+  if (hasTimeline) {
+    DAYS.forEach(day => {
+      let eventsHTML = '';
+      if(timelineItemMap[day]) {
+        timelineItemMap[day].forEach(ti => {
+          const [st, et] = ti.time.split('–');
+          const toCol = (tStr) => {
+            const [h,m] = tStr.split(':').map(Number);
+            return (h * 60 + m - 630) / 30 + 1;
+          };
+          let sCol = toCol(st||ti.time);
+          let eCol = st && et ? toCol(et) : sCol + 2; 
+
+          let memberColor = "#2d1f6e";
+          let borderColor = "#6c5ce7";
+          if(ti.boothName === "Stage") { memberColor = "#3b0764"; borderColor = "#a855f7"; }
+          else if(ti.boothName === "Cha-Ba-Cha") { memberColor = "#831843"; borderColor = "#e879f9"; }
+          else if(ti.boothName === "SNS Photo") { memberColor = "#064e3b"; borderColor = "#f472b6"; }
+
+          eventsHTML += `
+            <div class="event-pill" style="grid-column: ${sCol} / ${eCol}; background: ${memberColor}; border-color: ${borderColor};">
+              <div style="font-weight:700;font-size:11px;margin-bottom:2px">${ti.member} ${ti.qty>1?'(×'+ti.qty+')':''}</div>
+              <div style="font-size:9px;opacity:0.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ti.boothName}</div>
+              <button class="del-btn-abs" onclick="removeOrder('${ti.key}')">×</button>
+            </div>
+          `;
+        });
+      }
+      timelineHTML += `
+        <div class="tl-row">
+          <div class="tl-day-lbl">${day.split(' ').slice(0, 2).join(' ')}</div>
+          <div class="tl-track">${eventsHTML}</div>
+        </div>
+      `;
+    });
+    timelineHTML += '</div>';
+    document.getElementById('timelineRows').innerHTML = timelineHTML;
+  } else {
+    document.getElementById('timelineRows').innerHTML = '';
+  }
 }
 
 function removeOrder(key) {

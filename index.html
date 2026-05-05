@@ -3,808 +3,1055 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BNK48 × CGM48 — On Cloud 9 Festival คำนวณค่าใช้จ่าย</title>
+<title>BNK48 × CGM48 — On Cloud 9 Festival</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Sarabun',sans-serif;background:#f3f4f6;color:#334155;min-height:100vh}
-  .container{max-width:900px;margin:0 auto;padding:1.5rem 1rem 4rem}
+:root {
+  --pink: #ff6b9d;
+  --rose: #ff3d79;
+  --lilac: #d4a5ff;
+  --sky: #7ec8e3;
+  --cream: #fffaf7;
+  --ink: #1a0a2e;
+  --ink2: #2d1b4e;
+  --muted: #7a6892;
+  --card: #ffffff;
+  --border: rgba(212,165,255,0.25);
+  --ticket-gold: #f9c74f;
+  --shadow: 0 4px 24px rgba(26,10,46,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Noto Sans Thai',sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  min-height:100vh;
+  background-image: 
+    radial-gradient(ellipse at 10% 10%, rgba(255,107,157,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 80%, rgba(126,200,227,0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(212,165,255,0.05) 0%, transparent 70%);
+}
 
-  /* Header */
-  .hdr{text-align:center;padding:2rem 0 1.5rem;border-bottom:1px solid #e5e7eb}
-  .hdr h1{font-size:22px;font-weight:700;color:#111827;letter-spacing:0.02em}
-  .hdr .sub{font-size:13px;color:#6b7280;margin-top:6px}
-  .hdr .price-badge{display:inline-block;margin-top:10px;background:#ede9fe;border:1px solid #ddd6fe;color:#6d28d9;font-size:13px;font-weight:600;padding:5px 16px;border-radius:99px}
+/* ─── HEADER ─── */
+.hero {
+  position: relative;
+  text-align: center;
+  padding: 3.5rem 1rem 2.5rem;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,107,157,0.06) 0%, rgba(212,165,255,0.1) 50%, rgba(126,200,227,0.06) 100%);
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #ff6b9d22, #d4a5ff22);
+  border: 1px solid rgba(255,107,157,0.3);
+  border-radius: 99px;
+  padding: 5px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rose);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(22px, 5vw, 36px);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-bottom: 0.4rem;
+}
+.hero h1 span {
+  font-style: italic;
+  background: linear-gradient(135deg, #ff6b9d, #d4a5ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+.hero-pills {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink2);
+  box-shadow: var(--shadow);
+}
+.hero-pill .dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--pink);
+}
+.hero-pill.gold .dot { background: var(--ticket-gold); }
+.hero-pill.sky .dot { background: var(--sky); }
 
-  /* Section label */
-  .sec-lbl{font-size:11px;font-weight:600;color:#6b7280;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;margin-top:1.5rem}
+/* ─── LAYOUT ─── */
+.container { max-width: 960px; margin: 0 auto; padding: 0 1rem 5rem; }
 
-  /* Member grid */
-  .mbr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:6px}
-  .mbr-btn{border:1px solid #d1d5db;border-radius:8px;padding:7px 4px;cursor:pointer;background:#fff;color:#4b5563;font-size:11px;font-weight:500;text-align:center;transition:all .15s;font-family:'Sarabun',sans-serif}
-  .mbr-btn:hover{background:#f9fafb;border-color:#9ca3af}
-  .mbr-btn.active{background:#f5f3ff;border-color:#8b5cf6;color:#6d28d9;font-weight:700}
+/* ─── SECTION TITLE ─── */
+.sec-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  margin-top: 2rem;
+}
+.sec-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--border), transparent);
+}
+.sec-title-text {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.sec-title-icon {
+  font-size: 14px;
+}
 
-  /* Day tabs */
-  .tab-row{display:flex;gap:6px;margin-top:1.25rem;margin-bottom:12px;flex-wrap:wrap}
-  .tab{font-size:12px;padding:5px 14px;border-radius:99px;border:1px solid #d1d5db;background:#fff;cursor:pointer;color:#6b7280;font-family:'Sarabun',sans-serif;transition:all .15s}
-  .tab:hover{border-color:#9ca3af;color:#6d28d9}
-  .tab.active{background:#f5f3ff;border-color:#8b5cf6;color:#6d28d9;font-weight:600}
+/* ─── MEMBER GRID ─── */
+.mbr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  gap: 7px;
+}
+.mbr-btn {
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 9px 5px 8px;
+  cursor: pointer;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  transition: all .18s cubic-bezier(.34,1.56,.64,1);
+  font-family: 'Noto Sans Thai', sans-serif;
+  box-shadow: 0 2px 8px rgba(26,10,46,0.04);
+  position: relative;
+  overflow: hidden;
+  line-height: 1.3;
+}
+.mbr-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #ff6b9d15, #d4a5ff15);
+  opacity: 0;
+  transition: opacity .18s;
+}
+.mbr-btn:hover {
+  border-color: rgba(255,107,157,0.5);
+  color: var(--rose);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255,107,157,0.15);
+}
+.mbr-btn:hover::before { opacity: 1; }
+.mbr-btn.active {
+  border-color: var(--pink);
+  background: linear-gradient(135deg, #ff6b9d18, #d4a5ff18);
+  color: var(--rose);
+  font-weight: 700;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255,107,157,0.2);
+}
+.mbr-btn-stage {
+  grid-column: 1 / -1;
+  border-radius: 14px;
+  padding: 12px;
+  background: linear-gradient(135deg, var(--ink) 0%, var(--ink2) 100%);
+  border-color: rgba(212,165,255,0.3);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 16px rgba(26,10,46,0.25);
+}
+.mbr-btn-stage:hover {
+  border-color: var(--lilac);
+  color: var(--lilac);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(26,10,46,0.3);
+}
+.mbr-btn-stage.active {
+  border-color: var(--lilac);
+  background: linear-gradient(135deg, #2d1b4e, #4a2878);
+  color: var(--lilac);
+}
+.mbr-btn-stage::before { display: none; }
 
-  /* Day label */
-  .day-lbl-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#4b5563;margin-bottom:10px;padding-left:2px;font-weight:600}
-  .sel-all-btn{font-size:11px;color:#6d28d9;background:#ede9fe;border:1px solid #ddd6fe;border-radius:4px;padding:4px 8px;cursor:pointer;font-family:'Sarabun',sans-serif;font-weight:600}
-  .sel-all-btn:hover{background:#ddd6fe}
+/* ─── DAY TABS ─── */
+.tab-nav {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.day-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: 'Noto Sans Thai', sans-serif;
+  transition: all .18s;
+  box-shadow: 0 2px 8px rgba(26,10,46,0.04);
+}
+.day-tab:hover { border-color: rgba(255,107,157,0.4); color: var(--rose); }
+.day-tab.active {
+  background: linear-gradient(135deg, #ff6b9d, #ff3d79);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(255,107,157,0.35);
+}
+.day-tab .day-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+}
 
-  /* Booth block */
-  .booth-block{border:1px solid #e5e7eb;border-radius:12px;padding:1rem 1.1rem;margin-bottom:10px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
-  .booth-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
-  .booth-name{font-size:13px;font-weight:700;color:#111827}
-  .ticket-badge{font-size:10px;padding:2px 8px;border-radius:99px;background:#f3f4f6;border:1px solid #d1d5db;color:#4b5563;white-space:nowrap;font-weight:500}
+/* ─── BOOTH CARDS ─── */
+.booth-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 12px rgba(26,10,46,0.04);
+  transition: border-color .2s;
+}
+.booth-card:hover { border-color: rgba(212,165,255,0.4); }
+.booth-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.booth-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  flex: 1;
+}
+.ticket-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #f9c74f22, #f9c74f33);
+  border: 1px solid rgba(249,199,79,0.4);
+  border-radius: 99px;
+  padding: 4px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #b5860d;
+  font-family: 'DM Mono', monospace;
+  white-space: nowrap;
+}
+.ticket-pill .ticket-ico { font-size: 11px; }
 
-  /* Round items */
-  .round-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px}
-  .r-item{border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px;cursor:pointer;background:#fff;display:flex;justify-content:space-between;align-items:center;transition:all .15s}
-  .r-item:hover{border-color:#9ca3af}
-  .r-item.sel{background:#f5f3ff;border-color:#8b5cf6}
-  .r-item .rn{font-size:12px;color:#374151;font-weight:600}
-  .r-item .rt{font-size:10px;color:#6b7280;margin-top:2px}
-  .r-item.sel .rn{color:#5b21b6}
-  .r-item.sel .rt{color:#7c3aed}
+/* ─── ROUND ITEMS ─── */
+.round-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 7px;
+}
+.round-item {
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 9px 11px;
+  cursor: pointer;
+  background: #fafafa;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  transition: all .18s;
+}
+.round-item:hover {
+  border-color: rgba(255,107,157,0.4);
+  background: #fff;
+}
+.round-item.sel {
+  background: linear-gradient(135deg, #ff6b9d0d, #d4a5ff0d);
+  border-color: var(--pink);
+}
+.round-time {
+  font-family: 'DM Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.round-with {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+.round-item.sel .round-time { color: var(--rose); }
+.round-item.sel .round-with { color: #c06080; }
 
-  /* Qty control */
-  .qty-w{display:flex;align-items:center;gap:4px;flex-shrink:0}
-  .qb{width:22px;height:22px;border:1px solid #d1d5db;border-radius:5px;background:#f9fafb;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:#6d28d9;transition:all .12s;line-height:1}
-  .qb:hover{background:#ede9fe;border-color:#8b5cf6}
-  .qn{font-size:12px;min-width:16px;text-align:center;font-weight:700;color:#111827}
+/* ─── QTY CONTROL ─── */
+.qty-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.qty-btn {
+  width: 24px; height: 24px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--pink);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: all .15s;
+  font-weight: 700;
+}
+.qty-btn:hover {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: #fff;
+  transform: scale(1.1);
+}
+.qty-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 18px;
+  text-align: center;
+  color: var(--ink);
+}
 
-  /* No schedule */
-  .no-sched{text-align:center;padding:2.5rem;color:#6b7280;font-size:13px}
+/* ─── SELECT ALL ─── */
+.day-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 0 2px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.day-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink2);
+}
+.sel-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #ff6b9d, #d4a5ff);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Noto Sans Thai', sans-serif;
+  transition: all .15s;
+  box-shadow: 0 3px 12px rgba(255,107,157,0.3);
+}
+.sel-all-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(255,107,157,0.4); }
 
-  /* Summary */
-  .sum-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1.1rem 1.25rem;margin-top:1.5rem;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
-  .sum-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-  .sum-hdr span{font-size:14px;font-weight:700;color:#111827}
-  .clr-btn{font-size:11px;color:#ef4444;cursor:pointer;border:none;background:none;text-decoration:underline;font-family:'Sarabun',sans-serif}
-  .clr-btn:hover{color:#dc2626}
-  .del-btn{color:#ef4444;cursor:pointer;background:none;border:none;font-size:14px;padding:0 6px;border-radius:4px;line-height:1}
-  .del-btn:hover{background:#fee2e2}
-  .sum-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0;color:#4b5563;gap:8px}
-  .sum-row span:first-child{flex:1;font-weight:500}
-  .sum-row span:last-child{white-space:nowrap;color:#6d28d9;font-weight:600}
-  .sum-divider{border:none;border-top:1px dashed #e5e7eb;margin:10px 0}
-  .sum-total{display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:#111827;margin-top:4px}
-  .sum-total .amt{color:#6d28d9}
-  .sum-tickets{font-size:11px;color:#6b7280;margin-top:4px;text-align:right}
-  .ask-btn{margin-top:10px;width:100%;padding:9px;border:1px solid #d1d5db;border-radius:8px;background:#f9fafb;font-size:13px;cursor:pointer;color:#6d28d9;font-family:'Sarabun',sans-serif;transition:all .15s}
-  .ask-btn:hover{background:#ede9fe;border-color:#8b5cf6}
+/* ─── EMPTY ─── */
+.empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--muted);
+}
+.empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.7; }
+.empty-text { font-size: 14px; }
 
-  /* Empty state */
-  .empty-h{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;color:#6b7280;font-size:13px;gap:8px;text-align:center}
-  .empty-h .ico{font-size:36px;opacity:.5}
+/* ─── SUMMARY ─── */
+.sum-wrap { margin-top: 2rem; }
 
-  /* Timeline Grid */
-  .tl-container{overflow-x:auto;border:1px solid #e5e7eb;border-radius:8px;background:#fff;margin-top:10px}
-  .tl-header{display:flex;border-bottom:1px solid #e5e7eb;background:#f9fafb}
-  .tl-day-lbl{width:60px;flex-shrink:0;padding:8px 4px;font-size:11px;font-weight:700;color:#4b5563;border-right:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;text-align:center;word-break:break-word;background:#f3f4f6}
-  .tl-grid{flex:1;display:grid;grid-template-columns:repeat(22, minmax(80px, 1fr))}
-  .tl-time-lbl{font-size:10.5px;font-weight:600;color:#374151;padding:6px 4px;border-right:1px solid #e5e7eb;text-align:left}
-  .tl-row{display:flex;border-bottom:1px solid #e5e7eb}
-  .tl-row:last-child{border-bottom:none}
-  .tl-track{flex:1;display:grid;grid-template-columns:repeat(22, minmax(80px, 1fr));grid-auto-rows:min-content;gap:4px;padding:6px 4px;background-image:repeating-linear-gradient(to right, transparent, transparent calc(100%/22 * 2 - 1px), #f3f4f6 calc(100%/22 * 2 - 1px), #f3f4f6 calc(100%/22 * 2))}
-  .event-pill{background:#e0e7ff;border:1px solid #c7d2fe;border-radius:6px;color:#4338ca;font-size:10.5px;padding:6px 8px;line-height:1.4;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
-  .event-pill:hover{filter:brightness(0.95);z-index:2}
-  .del-btn-abs{position:absolute;top:3px;right:3px;background:rgba(255,255,255,0.7);border:1px solid rgba(0,0,0,0.1);color:#ef4444;border-radius:4px;width:18px;height:18px;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;font-weight:bold}
-  .del-btn-abs:hover{background:#ef4444;color:#fff;border-color:#ef4444}
+/* Timeline */
+.tl-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  padding: 1.1rem 0;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.tl-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1.25rem 0.9rem;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tl-filter-tabs {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.tl-tab {
+  padding: 4px 12px;
+  border-radius: 99px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: 'Noto Sans Thai', sans-serif;
+  transition: all .15s;
+}
+.tl-tab:hover { border-color: rgba(255,107,157,0.4); color: var(--rose); }
+.tl-tab.active {
+  background: var(--pink);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
+}
+.tl-container {
+  overflow-x: auto;
+  padding: 10px 0 4px;
+}
+.tl-header-row {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  min-width: 900px;
+}
+.tl-label-col {
+  width: 56px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  background: #f8f6ff;
+}
+.tl-times {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(22, 1fr);
+  background: #f8f6ff;
+}
+.tl-time-cell {
+  font-family: 'DM Mono', monospace;
+  font-size: 9.5px;
+  color: var(--muted);
+  font-weight: 500;
+  padding: 6px 4px;
+  border-right: 1px dashed rgba(212,165,255,0.3);
+  grid-column: span 2;
+}
+.tl-body-row {
+  display: flex;
+  border-bottom: 1px solid rgba(212,165,255,0.15);
+  min-width: 900px;
+}
+.tl-body-row:last-child { border-bottom: none; }
+.tl-day-cell {
+  width: 56px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  background: #f8f6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.3;
+}
+.tl-track {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(22, 1fr);
+  grid-auto-rows: min-content;
+  gap: 3px;
+  padding: 6px 4px;
+  min-height: 46px;
+  position: relative;
+}
+.event-chip {
+  border-radius: 8px;
+  padding: 5px 7px;
+  font-size: 10px;
+  line-height: 1.35;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  transition: filter .15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.event-chip:hover { filter: brightness(0.95); }
+.event-chip .chip-name { font-weight: 700; font-size: 10.5px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.event-chip .chip-booth { font-size: 9px; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip-del {
+  position: absolute;
+  top: 3px; right: 3px;
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(0,0,0,0.08);
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s;
+  line-height: 1;
+}
+.event-chip:hover .chip-del { opacity: 1; }
+.chip-del:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
 
-  /* Scrollbar */
-  ::-webkit-scrollbar{width:6px;height:6px}
-  ::-webkit-scrollbar-track{background:#f3f4f6}
-  ::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}
-  ::-webkit-scrollbar-thumb:hover{background:#9ca3af}
+/* Summary card */
+.sum-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  padding: 1.2rem 1.3rem;
+  box-shadow: var(--shadow);
+}
+.sum-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.sum-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px dashed rgba(212,165,255,0.2);
+  gap: 8px;
+}
+.sum-row:last-of-type { border-bottom: none; }
+.sum-row-label {
+  flex: 1;
+  font-size: 12px;
+  color: var(--ink2);
+  font-weight: 500;
+  line-height: 1.4;
+}
+.sum-row-cost {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--rose);
+  white-space: nowrap;
+}
+.sum-row-del {
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: none;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+  flex-shrink: 0;
+  line-height: 1;
+  font-weight: 300;
+}
+.sum-row-del:hover { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
+.sum-divider {
+  height: 1px;
+  background: linear-gradient(to right, var(--pink), var(--lilac));
+  margin: 14px 0;
+  opacity: 0.3;
+  border: none;
+}
+.sum-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.sum-total-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.sum-total-right { text-align: right; }
+.sum-total-amt {
+  font-family: 'DM Mono', monospace;
+  font-size: 22px;
+  font-weight: 500;
+  background: linear-gradient(135deg, #ff3d79, #d4a5ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: block;
+  line-height: 1;
+}
+.sum-ticket-count {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+  font-family: 'DM Mono', monospace;
+}
+.clear-btn {
+  font-size: 11px;
+  color: #ef4444;
+  background: none;
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: 'Noto Sans Thai', sans-serif;
+  font-weight: 500;
+  transition: all .15s;
+}
+.clear-btn:hover { background: #fee2e2; border-color: #fca5a5; }
 
-  @media(max-width:600px){
-    .round-grid{grid-template-columns:1fr}
-    .mbr-grid{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}
-  }
+/* No sched */
+.no-sched {
+  text-align: center;
+  padding: 2.5rem;
+  color: var(--muted);
+  font-size: 13px;
+  background: var(--card);
+  border: 1.5px dashed var(--border);
+  border-radius: 18px;
+}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#e5d5f5;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#c4a5e0}
+
+@media(max-width:600px){
+  .round-grid{grid-template-columns:1fr}
+  .mbr-grid{grid-template-columns:repeat(auto-fill,minmax(68px,1fr))}
+  .hero h1{font-size:20px}
+}
+
+/* Animate in */
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(12px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.booth-card { animation: fadeUp .25s ease both; }
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+
+<div class="hero">
+  <div class="hero-badge">🌸 Fan Event Planner</div>
+  <h1>BNK48 × CGM48<br><span>On Cloud 9 Festival</span></h1>
+  <div class="hero-sub">30 พฤษภาคม – 1 มิถุนายน 2026 · MCC Hall, The Mall Lifestore Bangkae</div>
+  <div class="hero-pills">
+    <div class="hero-pill"><span class="dot"></span>บูธกิจกรรม 8 บูธ</div>
+    <div class="hero-pill gold"><span class="dot"></span>1 Ticket = ฿250 THB</div>
+    <div class="hero-pill sky"><span class="dot"></span>3 วัน</div>
+  </div>
+</div>
+
 <div class="container">
 
-<div class="hdr">
-  <h1>BNK48 × CGM48 — On Cloud 9 Festival</h1>
-  <div class="sub">30 May – 1 June 2026 · MCC Hall, The Mall Lifestore Bangkae</div>
-  <div class="price-badge">1 Ticket = ฿250 THB</div>
-</div>
-
-<div class="sec-lbl">เลือกสมาชิก</div>
-<div class="mbr-grid" id="mGrid"></div>
-
-<div id="schedArea">
-  <div class="empty-h">
-    <div class="ico">👆</div>
-    <div>เลือกสมาชิกเพื่อดูรอบกิจกรรม</div>
+  <div class="sec-title">
+    <span class="sec-title-icon">💜</span>
+    <span class="sec-title-text">เลือกสมาชิก</span>
   </div>
-</div>
+  <div class="mbr-grid" id="mGrid"></div>
 
-<div id="sumArea" style="display:none">
-  <div class="sum-card" style="margin-bottom:1rem; padding:1rem 0;">
-    <div class="sum-hdr" style="padding:0 1.25rem;">
-      <span>ตารางเวลากิจกรรมทั้งหมด</span>
-      <div id="tlTabs" class="tab-row" style="margin:0;"></div>
+  <div id="schedArea">
+    <div class="empty-state" style="margin-top:2.5rem">
+      <div class="empty-icon">✨</div>
+      <div class="empty-text">เลือกสมาชิกที่คุณชื่นชอบ<br>เพื่อดูตารางกิจกรรม</div>
     </div>
-    <div id="timelineRows"></div>
   </div>
 
-  <div class="sum-card">
-    <div class="sum-hdr">
-      <span>รายการที่เลือก</span>
-      <button class="clr-btn" onclick="clearAll()">ล้างทั้งหมด</button>
+  <div id="sumArea" style="display:none">
+    <!-- Timeline -->
+    <div class="sum-wrap">
+      <div class="tl-card">
+        <div class="tl-card-header">
+          <div class="card-title">📅 ตารางเวลา</div>
+          <div class="tl-filter-tabs" id="tlTabs"></div>
+        </div>
+        <div class="tl-container" id="tlContainer"></div>
+      </div>
+
+      <!-- Summary -->
+      <div class="sum-card">
+        <div class="sum-card-header">
+          <div class="card-title">🛒 รายการที่เลือก</div>
+          <button class="clear-btn" onclick="clearAll()">ล้างทั้งหมด</button>
+        </div>
+        <div id="sumRows"></div>
+        <hr class="sum-divider">
+        <div class="sum-total-row">
+          <span class="sum-total-label">รวมทั้งหมด</span>
+          <div class="sum-total-right">
+            <span class="sum-total-amt" id="totalAmt">฿0</span>
+            <div class="sum-ticket-count" id="ticketCount"></div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div id="sumRows"></div>
-    <hr class="sum-divider">
-    <div class="sum-total">
-      <span>รวมทั้งหมด</span>
-      <span class="amt" id="totalAmt">฿0</span>
-    </div>
-    <div class="sum-tickets" id="ticketCount"></div>
   </div>
-</div>
 
 </div>
 
 <script>
 const TICKET_PRICE = 250;
-
 const BOOTHS = [
-  {id:"river",  name:"ข้ามไป ข้ามให้ได้ (River)",  short:"River",      tickets:1},
-  {id:"woh",    name:"Woh Oh Oh 555+",               short:"Woh Oh Oh",  tickets:1},
-  {id:"heart",  name:"ใจมันสั้น (Heart Rate)",       short:"ใจมันสั้น",  tickets:1},
-  {id:"blue",   name:"Blue White Blue (โยนบอล)",     short:"Blue White Blue",tickets:1},
-  {id:"lip",    name:"Lip ของเธอ (Tattoo)",          short:"Lip ของเธอ", tickets:1},
-  {id:"sns",    name:"SNS ลองอีฟรูปถ่ายไป",          short:"SNS Photo",  tickets:5},
-  {id:"hill",   name:"บนเนินเขา (พัดกอล์ฟ)",        short:"บนเนินเขา",  tickets:1},
-  {id:"ponytail",name:"Ponytail ผมทีพลิ้วสะบัดไป", short:"Ponytail",   tickets:1},
-  {id:"chabacha",name:"JABAJA CHA-BA-CHA ALL NIGHT LONG", short:"Cha-Ba-Cha", tickets:0},
-  {id:"fanmeet", name:"Fanmeet & Stage",            short:"Stage",      tickets:0},
+  {id:"river",    name:"ข้ามไป ข้ามให้ได้ (River)",         short:"River",         tickets:1},
+  {id:"woh",      name:"Woh Oh Oh 555+",                      short:"Woh Oh Oh",     tickets:1},
+  {id:"heart",    name:"ใจมันสั้น (Heart Rate)",              short:"ใจมันสั้น",     tickets:1},
+  {id:"blue",     name:"Blue White Blue (โยนบอล)",            short:"Blue White",    tickets:1},
+  {id:"lip",      name:"Lip ของเธอ (Tattoo)",                 short:"Lip ของเธอ",    tickets:1},
+  {id:"sns",      name:"SNS ลองอีฟรูปถ่ายไป",                short:"SNS Photo",     tickets:5},
+  {id:"hill",     name:"บนเนินเขา (พัดกอล์ฟ)",              short:"บนเนินเขา",     tickets:1},
+  {id:"ponytail", name:"Ponytail ผมทีพลิ้วสะบัดไป",         short:"Ponytail",      tickets:1},
+  {id:"chabacha", name:"JABAJA CHA-BA-CHA ALL NIGHT LONG",    short:"Cha-Ba-Cha",    tickets:0},
+  {id:"fanmeet",  name:"Fanmeet & Stage",                     short:"Stage",         tickets:0},
 ];
 
 const SCHED = {
-  river:{
-    "30 May 2026":[
-      ["14:30–15:30","Emmy","Sindy","Emma"],
-      ["15:30–16:30","Palmmy","Punpon","Lingling"],
-      ["16:30–17:30","Monet","Nisha","Mirin"],
-      ["17:30–18:30","L","Satangpound","Berry"],
-      ["18:30–19:30","Marine","Fame","Ploen"],
-      ["19:30–20:30","Pancake","Prae","Valentine"],
-    ],
-    "31 May 2026":[
-      ["10:30–11:30","Fame","Saonoi","Rose"],
-      ["11:30–12:30","Jew","Neen","Else"],
-      ["12:30–13:30","Arlee","Galeya","Lewlew"],
-      ["13:30–14:30","Nammonn","Khaimook","Tara"],
-      ["14:30–15:30","Yoghurt","Mayji","Niya"],
-      ["15:30–16:30","Berry","Chifa","Satangpound"],
-      ["16:30–17:30","Micha","Shenae","Namphet"],
-      ["17:30–18:30","Janry","Wawa","Hoop"],
-      ["18:30–19:30","Luksorn","Ginna","Lingling"],
-      ["19:30–20:30","Praew","Mint","Mirin"],
-    ],
-    "1 June 2026":[
-      ["10:30–11:30","Patt","Lookked","Marine"],
-      ["11:30–12:30","Nall","Mayji","Praifa"],
-      ["12:30–13:30","Niya","Proud","Jingjing"],
-      ["13:30–14:30","Hongyok","Monet","Yoghurt"],
-      ["14:30–15:30","Hoop","Kwan","Lingling"],
-      ["15:30–16:30","Emmy","Sindy","Praew"],
-      ["16:30–17:30","Blythe","Cartoon","Inkcha"],
-      ["17:30–18:30","Grape","Mail","Nana"],
-      ["18:30–19:30","Khowjow","Inkcha","Ginna"],
-      ["19:30–20:30","Pancake","Arlee","Galeya"],
-    ],
-  },
-  woh:{
-    "30 May 2026":[
-      ["14:30–15:30","L","Mint","Jingjing"],
-      ["15:30–16:30","Tara","Prae","Praifa"],
-      ["16:30–17:30","Shenae","Satangpound","Hoop"],
-      ["17:30–18:30","Emmy","Sindy","Khowjow"],
-      ["18:30–19:30","Grape","Mail","Mirin"],
-      ["19:30–20:30","Micha","Patt","Niya"],
-    ],
-    "31 May 2026":[
-      ["10:30–11:30","Ginna","Lingling","Hongyok"],
-      ["11:30–12:30","Monet","Praew","Nisha"],
-      ["12:30–13:30","Pancake","Emma","Namphet"],
-      ["13:30–14:30","Arlee","Galeya","Luksorn"],
-      ["14:30–15:30","Saonoi","Rose","Ploen"],
-      ["15:30–16:30","Fame","Lewlew","Else"],
-      ["16:30–17:30","Palmmy","Khowjow","Inkcha"],
-      ["17:30–18:30","Yoghurt","Punpon","Jingjing"],
-      ["18:30–19:30","Berry","Kwan","Marine"],
-      ["19:30–20:30","Janry","Wawa","Praifa"],
-    ],
-    "1 June 2026":[
-      ["10:30–11:30","Chifa","Jingjing","Nall"],
-      ["11:30–12:30","Valentine","Janry","Micha"],
-      ["12:30–13:30","Marine","Fame","Palmmy"],
-      ["13:30–14:30","Jew","Neen","Proud"],
-      ["14:30–15:30","Nammonn","Khaimook","Lookked"],
-      ["15:30–16:30","Nall","Mayji","Nana"],
-      ["16:30–17:30","Emmy","Sindy","Patt"],
-      ["17:30–18:30","Fame","Namphet","Pancake"],
-      ["18:30–19:30","Hoop","Saonoi","Emma"],
-      ["19:30–20:30","Blythe","Cartoon","Luksorn"],
-    ],
-  },
-  heart:{
-    "30 May 2026":[
-      ["14:30–15:30","Marine","Mirin","Chifa"],
-      ["15:30–16:30","Cartoon","Grape","Mail"],
-      ["16:30–17:30","Nammonn","Khaimook","Arlee"],
-      ["17:30–18:30","Wawa","Praew","Mint"],
-      ["18:30–19:30","Emmy","Sindy","Nisha"],
-      ["19:30–20:30","Palmmy","Luksorn","Kwan"],
-    ],
-    "31 May 2026":[
-      ["10:30–11:30","Neen","Niya","Lookked"],
-      ["11:30–12:30","Mint","Mirin","Wawa"],
-      ["12:30–13:30","Blythe","Cartoon","Grape"],
-      ["13:30–14:30","Nall","Mayji","Proud"],
-      ["14:30–15:30","Arlee","Galeya","Jew"],
-      ["15:30–16:30","Jingjing","Nana","Praifa"],
-      ["16:30–17:30","Ploen","Praew","Else"],
-      ["17:30–18:30","Hongyok","Valentine","Namphet"],
-      ["18:30–19:30","L","Patt","Prae"],
-      ["19:30–20:30","Hoop","Emma","Punpon"],
-    ],
-    "1 June 2026":[
-      ["10:30–11:30","Else","Shenae","Nana"],
-      ["11:30–12:30","Fame","Saonoi","Tara"],
-      ["12:30–13:30","Satangpound","Emma","Nammonn"],
-      ["13:30–14:30","Lingling","Punpon","Kwan"],
-      ["14:30–15:30","Monet","Lewlew","Emmy"],
-      ["15:30–16:30","Micha","Khowjow","Inkcha"],
-      ["16:30–17:30","Pancake","Ginna","Namphet"],
-      ["17:30–18:30","Berry","Rose","Niya"],
-      ["18:30–19:30","Janry","Chifa","Lookked"],
-      ["19:30–20:30","Yoghurt","Khaimook","Wawa"],
-    ],
-  },
-  blue:{
-    "30 May 2026":[
-      ["14:30–15:30","Arlee","Galeya","Luksorn"],
-      ["15:30–16:30","Fame","Saonoi","Rose"],
-      ["16:30–17:30","Janry","Valentine","Ploen"],
-      ["17:30–18:30","Monet","Praifa","Inkcha"],
-      ["18:30–19:30","Palmmy","Shenae","Satangpound"],
-      ["19:30–20:30","Yoghurt","Lingling","Else"],
-    ],
-    "31 May 2026":[
-      ["10:30–11:30","Nall","Mayji","Jingjing"],
-      ["11:30–12:30","Kwan","Satangpound","Lingling"],
-      ["12:30–13:30","Jew","Neen","Punpon"],
-      ["13:30–14:30","Pancake","Nisha","Prae"],
-      ["14:30–15:30","Emma","Valentine","Mail"],
-      ["15:30–16:30","Marine","Ginna","Luksorn"],
-      ["16:30–17:30","L","Lewlew","Lookked"],
-      ["17:30–18:30","Blythe","Cartoon","Tara"],
-      ["18:30–19:30","Hoop","Monet","Nana"],
-      ["19:30–20:30","Berry","Micha","Patt"],
-    ],
-    "1 June 2026":[
-      ["10:30–11:30","Emmy","Sindy","Micha"],
-      ["11:30–12:30","Hongyok","Lewlew","Else"],
-      ["12:30–13:30","Chifa","Namphet","Yoghurt"],
-      ["13:30–14:30","Wawa","Nana","Patt"],
-      ["14:30–15:30","Niya","Janry","Nisha"],
-      ["15:30–16:30","Grape","Mail","Galeya"],
-      ["16:30–17:30","Nammonn","Khaimook","Proud"],
-      ["17:30–18:30","Lookked","Lewlew","Nall"],
-      ["18:30–19:30","Praew","Mint","Mirin"],
-      ["19:30–20:30","Khowjow","Inkcha","Tara"],
-    ],
-  },
-  lip:{
-    "30 May 2026":[
-      ["14:30–15:30","Blythe","Cartoon","Lewlew"],
-      ["15:30–16:30","Nammonn","Khaimook","Else"],
-      ["16:30–17:30","Berry","Khowjow","Inkcha"],
-      ["17:30–18:30","Nall","Mayji","Kwan"],
-      ["18:30–19:30","Jew","Neen","Proud"],
-      ["19:30–20:30","Janry","Satangpound","Shenae"],
-    ],
-    "31 May 2026":[
-      ["10:30–11:30","Chifa","Nana","Namphet"],
-      ["11:30–12:30","Niya","Prae","Blythe"],
-      ["12:30–13:30","Mail","Luksorn","Praifa"],
-      ["13:30–14:30","Neen","Shenae","Grape"],
-      ["14:30–15:30","Hoop","Hongyok","Kwan"],
-      ["15:30–16:30","Lingling","Lookked","Saonoi"],
-      ["16:30–17:30","Patt","Valentine","Nisha"],
-      ["17:30–18:30","Ploen","Rose","Fame"],
-      ["18:30–19:30","Praew","Mint","Mirin"],
-      ["19:30–20:30","Palmmy","Khowjow","Else"],
-    ],
-    "1 June 2026":[
-      ["10:30–11:30","L","Ploen","Neen"],
-      ["11:30–12:30","Arlee","Galeya","Khaimook"],
-      ["12:30–13:30","Ginna","Hoop","Jew"],
-      ["13:30–14:30","Pancake","Prae","Else"],
-      ["14:30–15:30","Fame","Saonoi","Emma"],
-      ["15:30–16:30","Monet","Punpon","Tara"],
-      ["16:30–17:30","Yoghurt","Jingjing","Mail"],
-      ["17:30–18:30","Marine","Patt","Chifa"],
-      ["18:30–19:30","Emmy","Sindy","Wawa"],
-      ["19:30–20:30","Micha","Rose","Palmmy"],
-    ],
-  },
-  sns:{
-    "30 May 2026":[
-      ["14:30–15:30","Grape","Mail","Lookked"],
-      ["15:30–16:30","Micha","Patt","Ploen"],
-      ["16:30–17:30","Fame","Saonoi","Rose"],
-      ["17:30–18:30","Yoghurt","Else","Hongyok"],
-      ["18:30–19:30","Hoop","Wawa","Valentine"],
-      ["19:30–20:30","Nall","Mayji","Praew"],
-    ],
-    "31 May 2026":[
-      ["10:30–11:30","Tara","Prae","Praifa"],
-      ["11:30–12:30","Shenae","Ploen","Hongyok"],
-      ["12:30–13:30","Monet","Ginna","Praew"],
-      ["13:30–14:30","Khowjow","Inkcha","Mirin"],
-      ["14:30–15:30","Proud","Punpon","Nall"],
-      ["15:30–16:30","Blythe","Cartoon","Mint"],
-      ["16:30–17:30","Kwan","Emma","Rose"],
-      ["17:30–18:30","Pancake","Mail","Nana"],
-      ["18:30–19:30","Janry","Jingjing","Satangpound"],
-      ["19:30–20:30","L","Lewlew","Marine"],
-    ],
-    "1 June 2026":[
-      ["10:30–11:30","Satangpound","Namphet","Punpon"],
-      ["11:30–12:30","Emmy","Sindy","Nisha"],
-      ["12:30–13:30","Berry","Lingling","Shenae"],
-      ["13:30–14:30","Arlee","Galeya","Saonoi"],
-      ["14:30–15:30","Marine","Chifa","Prae"],
-      ["15:30–16:30","Palmmy","L","Mint"],
-      ["16:30–17:30","Jew","Neen","Niya"],
-      ["17:30–18:30","Nammonn","Khaimook","Mayji"],
-      ["18:30–19:30","Luksorn","Proud","Tara"],
-      ["19:30–20:30","Hoop","Nana","Namphet"],
-    ],
-  },
-  hill:{
-    "30 May 2026":[
-      ["14:30–15:30","Neen","Proud","Namphet"],
-      ["15:30–16:30","Hongyok","Kwan","Satangpound"],
-      ["16:30–17:30","Nall","Mayji","Luksorn"],
-      ["17:30–18:30","Blythe","Cartoon","Grape"],
-      ["18:30–19:30","Berry","Saonoi","Rose"],
-      ["19:30–20:30","Arlee","Galeya","Khaimook"],
-    ],
-    "31 May 2026":[
-      ["10:30–11:30","Shenae","Valentine","Proud"],
-      ["11:30–12:30","Nammonn","Khaimook","Cartoon"],
-      ["12:30–13:30","Khowjow","Inkcha","Nana"],
-      ["13:30–14:30","Niya","Cartoon","Saonoi"],
-      ["14:30–15:30","Praew","Mint","Mirin"],
-      ["15:30–16:30","Hoop","Micha","Palmmy"],
-      ["16:30–17:30","Wawa","Mail","Praifa"],
-      ["17:30–18:30","Luksorn","Chifa","Lingling"],
-      ["18:30–19:30","Lookked","Lewlew","Nisha"],
-      ["19:30–20:30","Yoghurt","Rose","Kwan"],
-    ],
-    "1 June 2026":[
-      ["10:30–11:30","Nammonn","Valentine","Niya"],
-      ["11:30–12:30","Jew","Prae","Neen"],
-      ["12:30–13:30","Pancake","Ploen","Else"],
-      ["13:30–14:30","L","Palmmy","Nisha"],
-      ["14:30–15:30","Micha","Patt","Ginna"],
-      ["15:30–16:30","Fame","Yoghurt","Mirin"],
-      ["16:30–17:30","Monet","Emma","Punpon"],
-      ["17:30–18:30","Janry","Wawa","Tara"],
-      ["18:30–19:30","Marine","Jingjing","Mayji"],
-      ["19:30–20:30","Emmy","Sindy","Berry"],
-    ],
-  },
-  ponytail:{
-    "30 May 2026":[
-      ["14:30–15:30","Pancake","Khowjow","Nana"],
-      ["15:30–16:30","Yoghurt","Galeya","Jew"],
-      ["16:30–17:30","Marine","Blythe","Praew"],
-      ["17:30–18:30","Micha","Patt","Niya"],
-      ["18:30–19:30","Janry","Arlee","Luksorn"],
-      ["19:30–20:30","Hoop","Nammonn","Praifa"],
-    ],
-    "31 May 2026":[
-      ["10:30–11:30","Grape","Mail","Inkcha"],
-      ["11:30–12:30","Nall","Mayji","Proud"],
-      ["12:30–13:30","Jingjing","Lookked","Shenae"],
-      ["13:30–14:30","Lingling","Hongyok","Kwan"],
-      ["14:30–15:30","Monet","Ginna","Sindy"],
-      ["15:30–16:30","L","Wawa","Nisha"],
-      ["16:30–17:30","Fame","Punpon","Blythe"],
-      ["17:30–18:30","Satangpound","Emma","Prae"],
-      ["18:30–19:30","Ploen","Else","Tara"],
-      ["19:30–20:30","Pancake","Chifa","Ginna"],
-    ],
-    "1 June 2026":[
-      ["10:30–11:30","Saonoi","Emma","Nisha"],
-      ["11:30–12:30","Ginna","Punpon","Satangpound"],
-      ["12:30–13:30","Emmy","Sindy","Lewlew"],
-      ["13:30–14:30","Berry","Valentine","Tara"],
-      ["14:30–15:30","Namphet","Wawa","Ploen"],
-      ["15:30–16:30","Chifa","Lookked","Arlee"],
-      ["16:30–17:30","Rose","Mint","Mirin"],
-      ["17:30–18:30","Palmmy","L","Neen"],
-      ["18:30–19:30","Neen","Galeya","Jew"],
-      ["19:30–20:30","Nammonn","Monet","Jingjing"],
-    ],
-  },
-  chabacha:{
-    "30 May 2026":[
-      ["14:30–15:30","Niya","Ginna","Nisha"],
-      ["15:30–16:30","Emmy","Sindy","Wawa"],
-      ["16:30–17:30","Jew","Neen","Proud"],
-      ["17:30–18:30","Pancake","Lingling","Prae"],
-      ["18:30–19:30","Monet","Hongyok","Mint"],
-      ["19:30–20:30","L","Khowjow","Inkcha"],
-    ],
-    "31 May 2026":[
-      ["10:30–11:30","Emma","Lewlew","Punpon"],
-      ["11:30–12:30","Fame","Saonoi","Rose"],
-      ["12:30–13:30","Chifa","Ploen","Valentine"],
-      ["13:30–14:30","Yoghurt","Else","Satangpound"],
-      ["14:30–15:30","Nammonn","Khaimook","Namphet"],
-      ["15:30–16:30","Janry","Prae","Tara"],
-      ["16:30–17:30","Berry","Marine","Hongyok"],
-      ["17:30–18:30","Palmmy","Khowjow","Inkcha"],
-      ["18:30–19:30","Micha","Shenae","Praifa"],
-      ["19:30–20:30","Blythe","Cartoon","Monet"],
-    ],
-    "1 June 2026":[
-      ["10:30–11:30","Janry","Wawa","Khaimook"],
-      ["11:30–12:30","Patt","Kwan","Nana"],
-      ["12:30–13:30","Arlee","Galeya","Lookked"],
-      ["13:30–14:30","Nall","Mayji","Praifa"],
-      ["14:30–15:30","Jingjing","Satangpound","L"],
-      ["15:30–16:30","Hoop","Saonoi","Proud"],
-      ["16:30–17:30","Luksorn","Berry","Grape"],
-      ["17:30–18:30","Praew","Mint","Mirin"],
-      ["18:30–19:30","Blythe","Cartoon","Lewlew"],
-      ["19:30–20:30","Grape","Mail","Jew"],
-    ]
-  },
-  fanmeet:{
-    "30 May 2026":[
-      ["11:30–13:30","⭐ กิจกรรมเวที","BNK48 6th Album First Performance (ALL)"],
-      ["17:30–19:30","⭐ กิจกรรมเวที","CGM48 2nd Gen & CGM48 5th Gen"],
-      ["20:30–21:00","⭐ กิจกรรมเวที","Thank You Session"]
-    ],
-    "31 May 2026":[
-      ["12:30–14:30","⭐ กิจกรรมเวที","BNK48 4th Gen"],
-      ["17:30–19:30","⭐ กิจกรรมเวที","BNK48 5th Gen"],
-      ["20:30–21:00","⭐ กิจกรรมเวที","Thank You Session"]
-    ],
-    "1 June 2026":[
-      ["12:30–14:30","⭐ กิจกรรมเวที","BNK48 6th Gen"],
-      ["17:30–19:30","⭐ กิจกรรมเวที","CGM48 3rd Gen & CGM48 4th Gen"],
-      ["20:30–21:00","⭐ กิจกรรมเวที","Thank You Session"]
-    ]
-  }
+  river:{"30 May 2026":[["14:30–15:30","Emmy","Sindy","Emma"],["15:30–16:30","Palmmy","Punpon","Lingling"],["16:30–17:30","Monet","Nisha","Mirin"],["17:30–18:30","L","Satangpound","Berry"],["18:30–19:30","Marine","Fame","Ploen"],["19:30–20:30","Pancake","Prae","Valentine"]],"31 May 2026":[["10:30–11:30","Fame","Saonoi","Rose"],["11:30–12:30","Jew","Neen","Else"],["12:30–13:30","Arlee","Galeya","Lewlew"],["13:30–14:30","Nammonn","Khaimook","Tara"],["14:30–15:30","Yoghurt","Mayji","Niya"],["15:30–16:30","Berry","Chifa","Satangpound"],["16:30–17:30","Micha","Shenae","Namphet"],["17:30–18:30","Janry","Wawa","Hoop"],["18:30–19:30","Luksorn","Ginna","Lingling"],["19:30–20:30","Praew","Mint","Mirin"]],"1 June 2026":[["10:30–11:30","Patt","Lookked","Marine"],["11:30–12:30","Nall","Mayji","Praifa"],["12:30–13:30","Niya","Proud","Jingjing"],["13:30–14:30","Hongyok","Monet","Yoghurt"],["14:30–15:30","Hoop","Kwan","Lingling"],["15:30–16:30","Emmy","Sindy","Praew"],["16:30–17:30","Blythe","Cartoon","Inkcha"],["17:30–18:30","Grape","Mail","Nana"],["18:30–19:30","Khowjow","Inkcha","Ginna"],["19:30–20:30","Pancake","Arlee","Galeya"]]},
+  woh:{"30 May 2026":[["14:30–15:30","L","Mint","Jingjing"],["15:30–16:30","Tara","Prae","Praifa"],["16:30–17:30","Shenae","Satangpound","Hoop"],["17:30–18:30","Emmy","Sindy","Khowjow"],["18:30–19:30","Grape","Mail","Mirin"],["19:30–20:30","Micha","Patt","Niya"]],"31 May 2026":[["10:30–11:30","Ginna","Lingling","Hongyok"],["11:30–12:30","Monet","Praew","Nisha"],["12:30–13:30","Pancake","Emma","Namphet"],["13:30–14:30","Arlee","Galeya","Luksorn"],["14:30–15:30","Saonoi","Rose","Ploen"],["15:30–16:30","Fame","Lewlew","Else"],["16:30–17:30","Palmmy","Khowjow","Inkcha"],["17:30–18:30","Yoghurt","Punpon","Jingjing"],["18:30–19:30","Berry","Kwan","Marine"],["19:30–20:30","Janry","Wawa","Praifa"]],"1 June 2026":[["10:30–11:30","Chifa","Jingjing","Nall"],["11:30–12:30","Valentine","Janry","Micha"],["12:30–13:30","Marine","Fame","Palmmy"],["13:30–14:30","Jew","Neen","Proud"],["14:30–15:30","Nammonn","Khaimook","Lookked"],["15:30–16:30","Nall","Mayji","Nana"],["16:30–17:30","Emmy","Sindy","Patt"],["17:30–18:30","Fame","Namphet","Pancake"],["18:30–19:30","Hoop","Saonoi","Emma"],["19:30–20:30","Blythe","Cartoon","Luksorn"]]},
+  heart:{"30 May 2026":[["14:30–15:30","Marine","Mirin","Chifa"],["15:30–16:30","Cartoon","Grape","Mail"],["16:30–17:30","Nammonn","Khaimook","Arlee"],["17:30–18:30","Wawa","Praew","Mint"],["18:30–19:30","Emmy","Sindy","Nisha"],["19:30–20:30","Palmmy","Luksorn","Kwan"]],"31 May 2026":[["10:30–11:30","Neen","Niya","Lookked"],["11:30–12:30","Mint","Mirin","Wawa"],["12:30–13:30","Blythe","Cartoon","Grape"],["13:30–14:30","Nall","Mayji","Proud"],["14:30–15:30","Arlee","Galeya","Jew"],["15:30–16:30","Jingjing","Nana","Praifa"],["16:30–17:30","Ploen","Praew","Else"],["17:30–18:30","Hongyok","Valentine","Namphet"],["18:30–19:30","L","Patt","Prae"],["19:30–20:30","Hoop","Emma","Punpon"]],"1 June 2026":[["10:30–11:30","Else","Shenae","Nana"],["11:30–12:30","Fame","Saonoi","Tara"],["12:30–13:30","Satangpound","Emma","Nammonn"],["13:30–14:30","Lingling","Punpon","Kwan"],["14:30–15:30","Monet","Lewlew","Emmy"],["15:30–16:30","Micha","Khowjow","Inkcha"],["16:30–17:30","Pancake","Ginna","Namphet"],["17:30–18:30","Berry","Rose","Niya"],["18:30–19:30","Janry","Chifa","Lookked"],["19:30–20:30","Yoghurt","Khaimook","Wawa"]]},
+  blue:{"30 May 2026":[["14:30–15:30","Arlee","Galeya","Luksorn"],["15:30–16:30","Fame","Saonoi","Rose"],["16:30–17:30","Janry","Valentine","Ploen"],["17:30–18:30","Monet","Praifa","Inkcha"],["18:30–19:30","Palmmy","Shenae","Satangpound"],["19:30–20:30","Yoghurt","Lingling","Else"]],"31 May 2026":[["10:30–11:30","Nall","Mayji","Jingjing"],["11:30–12:30","Kwan","Satangpound","Lingling"],["12:30–13:30","Jew","Neen","Punpon"],["13:30–14:30","Pancake","Nisha","Prae"],["14:30–15:30","Emma","Valentine","Mail"],["15:30–16:30","Marine","Ginna","Luksorn"],["16:30–17:30","L","Lewlew","Lookked"],["17:30–18:30","Blythe","Cartoon","Tara"],["18:30–19:30","Hoop","Monet","Nana"],["19:30–20:30","Berry","Micha","Patt"]],"1 June 2026":[["10:30–11:30","Emmy","Sindy","Micha"],["11:30–12:30","Hongyok","Lewlew","Else"],["12:30–13:30","Chifa","Namphet","Yoghurt"],["13:30–14:30","Wawa","Nana","Patt"],["14:30–15:30","Niya","Janry","Nisha"],["15:30–16:30","Grape","Mail","Galeya"],["16:30–17:30","Nammonn","Khaimook","Proud"],["17:30–18:30","Lookked","Lewlew","Nall"],["18:30–19:30","Praew","Mint","Mirin"],["19:30–20:30","Khowjow","Inkcha","Tara"]]},
+  lip:{"30 May 2026":[["14:30–15:30","Blythe","Cartoon","Lewlew"],["15:30–16:30","Nammonn","Khaimook","Else"],["16:30–17:30","Berry","Khowjow","Inkcha"],["17:30–18:30","Nall","Mayji","Kwan"],["18:30–19:30","Jew","Neen","Proud"],["19:30–20:30","Janry","Satangpound","Shenae"]],"31 May 2026":[["10:30–11:30","Chifa","Nana","Namphet"],["11:30–12:30","Niya","Prae","Blythe"],["12:30–13:30","Mail","Luksorn","Praifa"],["13:30–14:30","Neen","Shenae","Grape"],["14:30–15:30","Hoop","Hongyok","Kwan"],["15:30–16:30","Lingling","Lookked","Saonoi"],["16:30–17:30","Patt","Valentine","Nisha"],["17:30–18:30","Ploen","Rose","Fame"],["18:30–19:30","Praew","Mint","Mirin"],["19:30–20:30","Palmmy","Khowjow","Else"]],"1 June 2026":[["10:30–11:30","L","Ploen","Neen"],["11:30–12:30","Arlee","Galeya","Khaimook"],["12:30–13:30","Ginna","Hoop","Jew"],["13:30–14:30","Pancake","Prae","Else"],["14:30–15:30","Fame","Saonoi","Emma"],["15:30–16:30","Monet","Punpon","Tara"],["16:30–17:30","Yoghurt","Jingjing","Mail"],["17:30–18:30","Marine","Patt","Chifa"],["18:30–19:30","Emmy","Sindy","Wawa"],["19:30–20:30","Micha","Rose","Palmmy"]]},
+  sns:{"30 May 2026":[["14:30–15:30","Grape","Mail","Lookked"],["15:30–16:30","Micha","Patt","Ploen"],["16:30–17:30","Fame","Saonoi","Rose"],["17:30–18:30","Yoghurt","Else","Hongyok"],["18:30–19:30","Hoop","Wawa","Valentine"],["19:30–20:30","Nall","Mayji","Praew"]],"31 May 2026":[["10:30–11:30","Tara","Prae","Praifa"],["11:30–12:30","Shenae","Ploen","Hongyok"],["12:30–13:30","Monet","Ginna","Praew"],["13:30–14:30","Khowjow","Inkcha","Mirin"],["14:30–15:30","Proud","Punpon","Nall"],["15:30–16:30","Blythe","Cartoon","Mint"],["16:30–17:30","Kwan","Emma","Rose"],["17:30–18:30","Pancake","Mail","Nana"],["18:30–19:30","Janry","Jingjing","Satangpound"],["19:30–20:30","L","Lewlew","Marine"]],"1 June 2026":[["10:30–11:30","Satangpound","Namphet","Punpon"],["11:30–12:30","Emmy","Sindy","Nisha"],["12:30–13:30","Berry","Lingling","Shenae"],["13:30–14:30","Arlee","Galeya","Saonoi"],["14:30–15:30","Marine","Chifa","Prae"],["15:30–16:30","Palmmy","L","Mint"],["16:30–17:30","Jew","Neen","Niya"],["17:30–18:30","Nammonn","Khaimook","Mayji"],["18:30–19:30","Luksorn","Proud","Tara"],["19:30–20:30","Hoop","Nana","Namphet"]]},
+  hill:{"30 May 2026":[["14:30–15:30","Neen","Proud","Namphet"],["15:30–16:30","Hongyok","Kwan","Satangpound"],["16:30–17:30","Nall","Mayji","Luksorn"],["17:30–18:30","Blythe","Cartoon","Grape"],["18:30–19:30","Berry","Saonoi","Rose"],["19:30–20:30","Arlee","Galeya","Khaimook"]],"31 May 2026":[["10:30–11:30","Shenae","Valentine","Proud"],["11:30–12:30","Nammonn","Khaimook","Cartoon"],["12:30–13:30","Khowjow","Inkcha","Nana"],["13:30–14:30","Niya","Cartoon","Saonoi"],["14:30–15:30","Praew","Mint","Mirin"],["15:30–16:30","Hoop","Micha","Palmmy"],["16:30–17:30","Wawa","Mail","Praifa"],["17:30–18:30","Luksorn","Chifa","Lingling"],["18:30–19:30","Lookked","Lewlew","Nisha"],["19:30–20:30","Yoghurt","Rose","Kwan"]],"1 June 2026":[["10:30–11:30","Nammonn","Valentine","Niya"],["11:30–12:30","Jew","Prae","Neen"],["12:30–13:30","Pancake","Ploen","Else"],["13:30–14:30","L","Palmmy","Nisha"],["14:30–15:30","Micha","Patt","Ginna"],["15:30–16:30","Fame","Yoghurt","Mirin"],["16:30–17:30","Monet","Emma","Punpon"],["17:30–18:30","Janry","Wawa","Tara"],["18:30–19:30","Marine","Jingjing","Mayji"],["19:30–20:30","Emmy","Sindy","Berry"]]},
+  ponytail:{"30 May 2026":[["14:30–15:30","Pancake","Khowjow","Nana"],["15:30–16:30","Yoghurt","Galeya","Jew"],["16:30–17:30","Marine","Blythe","Praew"],["17:30–18:30","Micha","Patt","Niya"],["18:30–19:30","Janry","Arlee","Luksorn"],["19:30–20:30","Hoop","Nammonn","Praifa"]],"31 May 2026":[["10:30–11:30","Grape","Mail","Inkcha"],["11:30–12:30","Nall","Mayji","Proud"],["12:30–13:30","Jingjing","Lookked","Shenae"],["13:30–14:30","Lingling","Hongyok","Kwan"],["14:30–15:30","Monet","Ginna","Sindy"],["15:30–16:30","L","Wawa","Nisha"],["16:30–17:30","Fame","Punpon","Blythe"],["17:30–18:30","Satangpound","Emma","Prae"],["18:30–19:30","Ploen","Else","Tara"],["19:30–20:30","Pancake","Chifa","Ginna"]],"1 June 2026":[["10:30–11:30","Saonoi","Emma","Nisha"],["11:30–12:30","Ginna","Punpon","Satangpound"],["12:30–13:30","Emmy","Sindy","Lewlew"],["13:30–14:30","Berry","Valentine","Tara"],["14:30–15:30","Namphet","Wawa","Ploen"],["15:30–16:30","Chifa","Lookked","Arlee"],["16:30–17:30","Rose","Mint","Mirin"],["17:30–18:30","Palmmy","L","Neen"],["18:30–19:30","Neen","Galeya","Jew"],["19:30–20:30","Nammonn","Monet","Jingjing"]]},
+  chabacha:{"30 May 2026":[["14:30–15:30","Niya","Ginna","Nisha"],["15:30–16:30","Emmy","Sindy","Wawa"],["16:30–17:30","Jew","Neen","Proud"],["17:30–18:30","Pancake","Lingling","Prae"],["18:30–19:30","Monet","Hongyok","Mint"],["19:30–20:30","L","Khowjow","Inkcha"]],"31 May 2026":[["10:30–11:30","Emma","Lewlew","Punpon"],["11:30–12:30","Fame","Saonoi","Rose"],["12:30–13:30","Chifa","Ploen","Valentine"],["13:30–14:30","Yoghurt","Else","Satangpound"],["14:30–15:30","Nammonn","Khaimook","Namphet"],["15:30–16:30","Janry","Prae","Tara"],["16:30–17:30","Berry","Marine","Hongyok"],["17:30–18:30","Palmmy","Khowjow","Inkcha"],["18:30–19:30","Micha","Shenae","Praifa"],["19:30–20:30","Blythe","Cartoon","Monet"]],"1 June 2026":[["10:30–11:30","Janry","Wawa","Khaimook"],["11:30–12:30","Patt","Kwan","Nana"],["12:30–13:30","Arlee","Galeya","Lookked"],["13:30–14:30","Nall","Mayji","Praifa"],["14:30–15:30","Jingjing","Satangpound","L"],["15:30–16:30","Hoop","Saonoi","Proud"],["16:30–17:30","Luksorn","Berry","Grape"],["17:30–18:30","Praew","Mint","Mirin"],["18:30–19:30","Blythe","Cartoon","Lewlew"],["19:30–20:30","Grape","Mail","Jew"]]},
+  fanmeet:{"30 May 2026":[["11:30–13:30","⭐ กิจกรรมเวที","BNK48 6th Album First Performance (ALL)"],["17:30–19:30","⭐ กิจกรรมเวที","CGM48 2nd Gen & CGM48 5th Gen"],["20:30–21:00","⭐ กิจกรรมเวที","Thank You Session"]],"31 May 2026":[["12:30–14:30","⭐ กิจกรรมเวที","BNK48 4th Gen"],["17:30–19:30","⭐ กิจกรรมเวที","BNK48 5th Gen"],["20:30–21:00","⭐ กิจกรรมเวที","Thank You Session"]],"1 June 2026":[["12:30–14:30","⭐ กิจกรรมเวที","BNK48 6th Gen"],["17:30–19:30","⭐ กิจกรรมเวที","CGM48 3rd Gen & CGM48 4th Gen"],["20:30–21:00","⭐ กิจกรรมเวที","Thank You Session"]]}
 };
 
 const DAYS = ["30 May 2026","31 May 2026","1 June 2026"];
 const DAY_LABELS = {
-  "30 May 2026":"เสาร์ที่ 30 พฤษภาคม 2026",
-  "31 May 2026":"อาทิตย์ที่ 31 พฤษภาคม 2026",
-  "1 June 2026":"จันทร์ที่ 1 มิถุนายน 2026"
+  "30 May 2026":"เสาร์ 30 พ.ค.",
+  "31 May 2026":"อาทิตย์ 31 พ.ค.",
+  "1 June 2026":"จันทร์ 1 มิ.ย."
 };
 
 const memberSet = new Set();
-Object.keys(SCHED).forEach(boothId=>{
-  if (boothId === 'fanmeet') return;
-  Object.values(SCHED[boothId]).forEach(slots=>{
-    slots.forEach(slot=>{ slot.slice(1).forEach(m=>memberSet.add(m)); });
-  });
+Object.keys(SCHED).forEach(bid => {
+  if(bid === 'fanmeet') return;
+  Object.values(SCHED[bid]).forEach(slots => slots.forEach(s => s.slice(1).forEach(m => memberSet.add(m))));
 });
 const MEMBERS = [...memberSet].sort();
 
 let state = { member: null, selections: {}, curDay: "30 May 2026" };
+let tlFilterDay = 'All';
 
-function initMembers(){
+function initMembers() {
   const g = document.getElementById('mGrid');
-  
-  const stageBtn = document.createElement('button');
-  stageBtn.className='mbr-btn'; stageBtn.style.gridColumn = '1 / -1'; stageBtn.style.padding = '10px'; stageBtn.style.background = '#2c225a'; stageBtn.style.borderColor = '#4a3d8a'; stageBtn.style.color = '#fff'; stageBtn.textContent='⭐ กิจกรรมเวทีทั้งหมด (Fanmeet & Stage)'; stageBtn.id='mb-⭐ กิจกรรมเวที';
-  stageBtn.onclick=()=>selMember('⭐ กิจกรรมเวที');
-  g.appendChild(stageBtn);
 
-  MEMBERS.forEach(m=>{
+  const stage = document.createElement('button');
+  stage.className = 'mbr-btn mbr-btn-stage';
+  stage.id = 'mb-⭐ กิจกรรมเวที';
+  stage.textContent = '⭐ กิจกรรมเวทีทั้งหมด (Fanmeet & Stage)';
+  stage.onclick = () => selMember('⭐ กิจกรรมเวที');
+  g.appendChild(stage);
+
+  MEMBERS.forEach(m => {
     const b = document.createElement('button');
-    b.className='mbr-btn'; b.textContent=m; b.id='mb-'+m;
-    b.onclick=()=>selMember(m);
+    b.className = 'mbr-btn'; b.textContent = m; b.id = 'mb-' + m;
+    b.onclick = () => selMember(m);
     g.appendChild(b);
   });
 }
 
-function selMember(m){
-  document.querySelectorAll('.mbr-btn').forEach(b=>b.classList.remove('active'));
-  const el = document.getElementById('mb-'+m);
+function selMember(m) {
+  document.querySelectorAll('.mbr-btn').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('mb-' + m);
   if(el) el.classList.add('active');
-  state.member=m;
+  state.member = m;
   renderSched();
 }
 
-function getKey(member,booth,day,idx){ return member+'|'+booth+'|'+day+'|'+idx; }
+function getKey(member, booth, day, idx) { return member + '|' + booth + '|' + day + '|' + idx; }
 
-function renderSched(){
+function renderSched() {
   const m = state.member;
   if(!m) return;
   const area = document.getElementById('schedArea');
-  area.innerHTML='';
+  area.innerHTML = '';
 
-  // Tabs
-  const tabRow = document.createElement('div');
-  tabRow.className='tab-row';
-  DAYS.forEach(d=>{
-    const t=document.createElement('button');
-    t.className='tab'+(d===state.curDay?' active':'');
-    t.textContent=d;
-    t.onclick=()=>{ state.curDay=d; renderSched(); };
-    tabRow.appendChild(t);
+  // Day tabs
+  const tabNav = document.createElement('div');
+  tabNav.className = 'tab-nav';
+  tabNav.style.marginTop = '1.5rem';
+  DAYS.forEach(d => {
+    const btn = document.createElement('button');
+    btn.className = 'day-tab' + (d === state.curDay ? ' active' : '');
+    const parts = d.split(' ');
+    btn.innerHTML = `<span class="day-num">${parts[0]}</span> ${parts[1]} ${parts[2]}`;
+    btn.onclick = () => { state.curDay = d; renderSched(); };
+    tabNav.appendChild(btn);
   });
-  area.appendChild(tabRow);
+  area.appendChild(tabNav);
 
-  const dayLbl = document.createElement('div');
-  dayLbl.className='day-lbl-row';
-  dayLbl.innerHTML=`<span>${DAY_LABELS[state.curDay]}</span>
-    <button class="sel-all-btn" onclick="selectAllDay()">+ เลือกรอบทั้งหมดในหน้านี้</button>`;
-  area.appendChild(dayLbl);
+  // Day bar
+  const dayBar = document.createElement('div');
+  dayBar.className = 'day-bar';
+  dayBar.innerHTML = `<span class="day-label">📋 ${DAY_LABELS[state.curDay]}</span>
+    <button class="sel-all-btn" onclick="selectAllDay()">✚ เลือกทั้งหมดในวันนี้</button>`;
+  area.appendChild(dayBar);
 
-  let hasAny=false;
-  BOOTHS.forEach(booth=>{
-    const slots=(SCHED[booth.id]||{})[state.curDay]||[];
-    const mySlots=slots.map((s,i)=>({slot:s,idx:i})).filter(({slot})=>slot.slice(1).includes(m));
-    if(mySlots.length===0) return;
-    hasAny=true;
+  let hasAny = false;
+  BOOTHS.forEach((booth, bi) => {
+    const slots = (SCHED[booth.id] || {})[state.curDay] || [];
+    const mySlots = slots.map((s, i) => ({s, i})).filter(({s}) => s.slice(1).includes(m));
+    if(!mySlots.length) return;
+    hasAny = true;
 
-    const block=document.createElement('div');
-    block.className='booth-block';
+    const card = document.createElement('div');
+    card.className = 'booth-card';
+    card.style.animationDelay = (bi * 0.04) + 's';
 
-    const dh=document.createElement('div');
-    dh.className='booth-hdr';
-    dh.innerHTML=`<span class="booth-name">${booth.name}</span><span class="ticket-badge">${booth.tickets} Ticket${booth.tickets>1?'s':''} = ฿${(booth.tickets*TICKET_PRICE).toLocaleString()} / รอบ</span>`;
-    block.appendChild(dh);
+    let ticketLabel = booth.tickets > 0
+      ? `🎫 ${booth.tickets} Ticket${booth.tickets > 1 ? 's' : ''} = ฿${(booth.tickets * TICKET_PRICE).toLocaleString()}`
+      : '✨ Free';
 
-    const rg=document.createElement('div');
-    rg.className='round-grid';
+    card.innerHTML = `<div class="booth-header">
+      <span class="booth-name">${booth.name}</span>
+      <span class="ticket-pill"><span class="ticket-ico">🎟</span>${ticketLabel}</span>
+    </div>`;
 
-    mySlots.forEach(({slot,idx})=>{
-      const key=getKey(m,booth.id,state.curDay,idx);
-      const qty=state.selections[key]||0;
-      const others=slot.slice(1).filter(x=>x!==m);
-      const item=document.createElement('div');
-      item.className='r-item'+(qty>0?' sel':'');
-      item.id='bi-'+key.replace(/[\|]/g,'_');
-      
-      let rtText = `กับ ${others.join(', ')}`;
-      if (m === "⭐ กิจกรรมเวที" && booth.id === "fanmeet") {
-        rtText = others.join(', ');
-      }
+    const rg = document.createElement('div');
+    rg.className = 'round-grid';
 
-      item.innerHTML=`
+    mySlots.forEach(({s, i}) => {
+      const key = getKey(m, booth.id, state.curDay, i);
+      const qty = state.selections[key] || 0;
+      const others = s.slice(1).filter(x => x !== m);
+      const item = document.createElement('div');
+      item.className = 'round-item' + (qty > 0 ? ' sel' : '');
+      item.id = 'bi-' + key.replace(/\|/g, '_');
+
+      let withText = (m === '⭐ กิจกรรมเวที') ? others.join(', ') : 'กับ ' + others.join(', ');
+
+      item.innerHTML = `
         <div style="flex:1;min-width:0">
-          <div class="rn">${slot[0]}</div>
-          <div class="rt">${rtText}</div>
+          <div class="round-time">${s[0]}</div>
+          <div class="round-with">${withText}</div>
         </div>
-        <div class="qty-w">
-          <button class="qb" onclick="chQty('${key}',${booth.tickets},-1)">−</button>
-          <span class="qn" id="qn-${key.replace(/[\|]/g,'_')}">${qty}</span>
-          <button class="qb" onclick="chQty('${key}',${booth.tickets},1)">+</button>
-        </div>
-      `;
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="chQty('${key}',${booth.tickets},-1)">−</button>
+          <span class="qty-num" id="qn-${key.replace(/\|/g,'_')}">${qty}</span>
+          <button class="qty-btn" onclick="chQty('${key}',${booth.tickets},1)">+</button>
+        </div>`;
       rg.appendChild(item);
     });
-    block.appendChild(rg);
-    area.appendChild(block);
+
+    card.appendChild(rg);
+    area.appendChild(card);
   });
 
-  if(!hasAny){
-    const emp=document.createElement('div');
-    emp.className='no-sched';
-    emp.textContent=`${m} ไม่มีรอบในวันนี้`;
-    area.appendChild(emp);
+  if(!hasAny) {
+    const no = document.createElement('div');
+    no.className = 'no-sched';
+    no.textContent = `${m} ไม่มีรอบในวันนี้ 🌙`;
+    area.appendChild(no);
   }
 }
 
-function chQty(key,tickets,delta){
-  const cur=state.selections[key]||0;
-  const next=Math.max(0,cur+delta);
-  state.selections[key]=next;
-  const safeKey=key.replace(/[\|]/g,'_');
-  const qnEl=document.getElementById('qn-'+safeKey);
-  if(qnEl) qnEl.textContent=next;
-  const biEl=document.getElementById('bi-'+safeKey);
-  if(biEl) biEl.classList.toggle('sel',next>0);
+function chQty(key, tickets, delta) {
+  const cur = state.selections[key] || 0;
+  const next = Math.max(0, cur + delta);
+  state.selections[key] = next;
+  const sk = key.replace(/\|/g, '_');
+  const qn = document.getElementById('qn-' + sk);
+  if(qn) qn.textContent = next;
+  const bi = document.getElementById('bi-' + sk);
+  if(bi) bi.classList.toggle('sel', next > 0);
   updateSum();
-}
-
-let tlFilterDay = 'All';
-
-function renderTlTabs() {
-  const tabsContainer = document.getElementById('tlTabs');
-  if(!tabsContainer) return '';
-  let html = `<button class="tab${tlFilterDay==='All'?' active':''}" onclick="tlFilterDay='All'; updateSum();" style="padding:3px 10px; font-size:11px">All Days</button>`;
-  DAYS.forEach(d => {
-    html += `<button class="tab${tlFilterDay===d?' active':''}" onclick="tlFilterDay='${d}'; updateSum();" style="padding:3px 10px; font-size:11px">${d.split(' ').slice(0, 2).join(' ')}</button>`;
-  });
-  return html;
-}
-
-function updateSum(){
-  let total=0, totalTickets=0;
-  const rows=[];
-  const timelineItemMap = {};
-
-  Object.entries(state.selections).forEach(([key,qty])=>{
-    if(qty===0) return;
-    const [member,boothId,day,idxStr]=key.split('|');
-    const idx=parseInt(idxStr);
-    const booth=BOOTHS.find(b=>b.id===boothId);
-    if(!booth) return;
-    const slot=((SCHED[boothId]||{})[day]||[])[idx];
-    if(!slot) return;
-    
-    let displayName = member;
-    if(member === "⭐ กิจกรรมเวที") {
-      const others = slot.slice(1).filter(m => m !== "⭐ กิจกรรมเวที");
-      if(others.length > 0) displayName = others.join(", ");
-    }
-
-    const t=booth.tickets*qty;
-    const c=t*TICKET_PRICE;
-    total+=c; totalTickets+=t;
-    let costText = t > 0 ? `${t} tickets = ฿${c.toLocaleString()}` : `Free`;
-    rows.push({label:`${displayName} — ${booth.short} (${day}) ${slot[0]} ×${qty}`,t,c,costText,key});
-
-    if(!timelineItemMap[day]) timelineItemMap[day] = [];
-    timelineItemMap[day].push({
-      time: slot[0],
-      boothName: booth.short,
-      member: displayName,
-      qty: qty,
-      key: key
-    });
-  });
-
-  document.getElementById('sumArea').style.display=rows.length>0?'block':'none';
-  document.getElementById('sumRows').innerHTML=rows.map(r=>
-    `<div class="sum-row"><span>${r.label}</span><div style="display:flex;align-items:center;"><span>${r.costText}</span><button class="del-btn" onclick="removeOrder('${r.key}')">×</button></div></div>`
-  ).join('');
-  document.getElementById('totalAmt').textContent='฿'+total.toLocaleString();
-  document.getElementById('ticketCount').textContent=`รวม ${totalTickets} tickets`;
-
-  let timelineHTML = `
-    <div class="tl-container" style="border-left:none;border-right:none;border-radius:0;">
-      <div class="tl-header">
-        <div class="tl-day-lbl">Date</div>
-        <div class="tl-grid">
-          <div class="tl-time-lbl" style="grid-column: span 2">10:30</div>
-          <div class="tl-time-lbl" style="grid-column: span 2">11:30</div>
-          <div class="tl-time-lbl" style="grid-column: span 2">12:30</div>
-          <div class="tl-time-lbl" style="grid-column: span 2">13:30</div>
-          <div class="tl-time-lbl" style="grid-column: span 2">14:30</div>
-          <div class="tl-time-lbl" style="grid-column: span 2">15:30</div>
-          <div class="tl-time-lbl" style="grid-column: span 2">16:30</div>
-          <div class="tl-time-lbl" style="grid-column: span 2">17:30</div>
-          <div class="tl-time-lbl" style="grid-column: span 2">18:30</div>
-          <div class="tl-time-lbl" style="grid-column: span 2">19:30</div>
-          <div class="tl-time-lbl" style="grid-column: span 2; border-right:none;">20:30</div>
-        </div>
-      </div>
-  `;
-
-  let hasTimeline = false;
-  DAYS.forEach(day => {
-    if(timelineItemMap[day] && timelineItemMap[day].length > 0) hasTimeline = true;
-  });
-  
-  const tabsContainer = document.getElementById('tlTabs');
-  if(tabsContainer) tabsContainer.innerHTML = renderTlTabs();
-
-  if (hasTimeline) {
-    DAYS.forEach(day => {
-      if (tlFilterDay !== 'All' && tlFilterDay !== day) return;
-      let eventsHTML = '';
-      if(timelineItemMap[day]) {
-        let occupied = [];
-        timelineItemMap[day].forEach(ti => {
-          const [st, et] = ti.time.split('–');
-          const toCol = (tStr) => {
-            const [h,m] = tStr.split(':').map(Number);
-            return (h * 60 + m - 630) / 30 + 1;
-          };
-          let sCol = toCol(st||ti.time);
-          let eCol = st && et ? toCol(et) : sCol + 2; 
-
-          let r = 1;
-          while(occupied.some(o => o.row === r && !(eCol <= o.start || sCol >= o.end))) {
-            r++;
-          }
-          occupied.push({row: r, start: sCol, end: eCol});
-
-          let memberColor = "#e0e7ff";
-          let borderColor = "#c7d2fe";
-          let textColor = "#4338ca";
-          
-          if(ti.boothName === "Stage") { memberColor = "#f3e8ff"; borderColor = "#d8b4fe"; textColor = "#7e22ce"; }
-          else if(ti.boothName === "Cha-Ba-Cha") { memberColor = "#fce7f3"; borderColor = "#fbcfe8"; textColor = "#be185d"; }
-          else if(ti.boothName === "SNS Photo") { memberColor = "#dcfce7"; borderColor = "#6ee7b7"; textColor = "#047857"; }
-
-          eventsHTML += `
-            <div class="event-pill" style="grid-column: ${sCol} / ${eCol}; grid-row: ${r}; background: ${memberColor}; border-color: ${borderColor}; color: ${textColor};">
-              <div style="font-weight:700;font-size:11px;margin-bottom:2px">${ti.member} ${ti.qty>1?'(×'+ti.qty+')':''}</div>
-              <div style="font-size:9.5px;opacity:0.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ti.boothName}</div>
-              <button class="del-btn-abs" onclick="removeOrder('${ti.key}')">×</button>
-            </div>
-          `;
-        });
-      }
-      timelineHTML += `
-        <div class="tl-row">
-          <div class="tl-day-lbl">${day.split(' ').slice(0, 2).join(' ')}</div>
-          <div class="tl-track">${eventsHTML}</div>
-        </div>
-      `;
-    });
-    timelineHTML += '</div>';
-    document.getElementById('timelineRows').innerHTML = timelineHTML;
-  } else {
-    document.getElementById('timelineRows').innerHTML = '';
-  }
 }
 
 function removeOrder(key) {
   state.selections[key] = 0;
-  if(state.member) {
-    const safeKey=key.replace(/[\|]/g,'_');
-    const qnEl=document.getElementById('qn-'+safeKey);
-    if(qnEl) qnEl.textContent=0;
-    const biEl=document.getElementById('bi-'+safeKey);
-    if(biEl) biEl.classList.remove('sel');
-  }
+  const sk = key.replace(/\|/g, '_');
+  const qn = document.getElementById('qn-' + sk);
+  if(qn) qn.textContent = 0;
+  const bi = document.getElementById('bi-' + sk);
+  if(bi) bi.classList.remove('sel');
   updateSum();
 }
 
-function clearAll(){
-  state.selections={};
+function clearAll() {
+  state.selections = {};
   if(state.member) renderSched();
   updateSum();
 }
 
-function selectAllDay(){
-  const m=state.member;
+function selectAllDay() {
+  const m = state.member;
   if(!m) return;
-  let changed=false;
-  BOOTHS.forEach(booth=>{
-    const slots=(SCHED[booth.id]||{})[state.curDay]||[];
-    slots.forEach((s,i)=>{
-      if(s.slice(1).includes(m)){
-        const key=getKey(m,booth.id,state.curDay,i);
-        if(!state.selections[key]){
-          state.selections[key]=1;
-          changed=true;
-        }
+  let changed = false;
+  BOOTHS.forEach(booth => {
+    const slots = (SCHED[booth.id] || {})[state.curDay] || [];
+    slots.forEach((s, i) => {
+      if(s.slice(1).includes(m)) {
+        const key = getKey(m, booth.id, state.curDay, i);
+        if(!state.selections[key]) { state.selections[key] = 1; changed = true; }
       }
     });
   });
-  if(changed){
-    renderSched();
-    updateSum();
-  }
+  if(changed) { renderSched(); updateSum(); }
+}
+
+// Chip colors per booth type
+const CHIP_STYLES = {
+  fanmeet: { bg: '#f3e8ff', border: '#d8b4fe', color: '#7e22ce' },
+  chabacha: { bg: '#fce7f3', border: '#fbcfe8', color: '#be185d' },
+  sns: { bg: '#dcfce7', border: '#6ee7b7', color: '#047857' },
+  hill: { bg: '#fff7ed', border: '#fed7aa', color: '#c2410c' },
+  default: { bg: '#eff6ff', border: '#bfdbfe', color: '#1d4ed8' },
+};
+
+function toCol(tStr) {
+  const [h, min] = tStr.split(':').map(Number);
+  return (h * 60 + min - 630) / 30 + 1;
+}
+
+function updateSum() {
+  let total = 0, totalTickets = 0;
+  const rows = [];
+  const tlMap = {};
+
+  Object.entries(state.selections).forEach(([key, qty]) => {
+    if(!qty) return;
+    const [member, boothId, day, idxStr] = key.split('|');
+    const idx = parseInt(idxStr);
+    const booth = BOOTHS.find(b => b.id === boothId);
+    if(!booth) return;
+    const slot = ((SCHED[boothId] || {})[day] || [])[idx];
+    if(!slot) return;
+
+    let displayName = member;
+    if(member === '⭐ กิจกรรมเวที') {
+      displayName = slot.slice(1).filter(m => m !== '⭐ กิจกรรมเวที').join(', ');
+    }
+
+    const t = booth.tickets * qty;
+    const c = t * TICKET_PRICE;
+    total += c; totalTickets += t;
+    const costText = t > 0 ? `${t} tickets = ฿${c.toLocaleString()}` : 'Free';
+    rows.push({ label: `${displayName} — ${booth.short} (${day}) ${slot[0]} ×${qty}`, t, c, costText, key });
+
+    if(!tlMap[day]) tlMap[day] = [];
+    tlMap[day].push({ time: slot[0], boothId, boothName: booth.short, member: displayName, qty, key });
+  });
+
+  const sumArea = document.getElementById('sumArea');
+  sumArea.style.display = rows.length ? 'block' : 'none';
+  if(!rows.length) return;
+
+  // Summary rows
+  document.getElementById('sumRows').innerHTML = rows.map(r => `
+    <div class="sum-row">
+      <span class="sum-row-label">${r.label}</span>
+      <span class="sum-row-cost">${r.costText}</span>
+      <button class="sum-row-del" onclick="removeOrder('${r.key}')">×</button>
+    </div>`).join('');
+  document.getElementById('totalAmt').textContent = '฿' + total.toLocaleString();
+  document.getElementById('ticketCount').textContent = `รวม ${totalTickets} tickets`;
+
+  // TL tabs
+  const tlTabs = document.getElementById('tlTabs');
+  tlTabs.innerHTML = `<button class="tl-tab${tlFilterDay==='All'?' active':''}" onclick="setTlDay('All')">ทั้งหมด</button>`
+    + DAYS.map(d => `<button class="tl-tab${tlFilterDay===d?' active':''}" onclick="setTlDay('${d}')">${d.split(' ').slice(0,2).join(' ')}</button>`).join('');
+
+  // Timeline
+  const times = ['10:30','11:30','12:30','13:30','14:30','15:30','16:30','17:30','18:30','19:30','20:30'];
+  let tlHTML = `<div class="tl-header-row">
+    <div class="tl-label-col" style="font-size:9px;color:var(--muted);padding:6px;display:flex;align-items:center;justify-content:center;font-weight:600">Date</div>
+    <div class="tl-times">${times.map(t=>`<div class="tl-time-cell" style="grid-column:span 2">${t}</div>`).join('')}</div>
+  </div>`;
+
+  DAYS.forEach(day => {
+    if(tlFilterDay !== 'All' && tlFilterDay !== day) return;
+    const items = tlMap[day] || [];
+    let eventsHTML = '';
+    const occupied = [];
+    items.forEach(ti => {
+      const [st, et] = ti.time.split('–');
+      const sCol = toCol(st);
+      const eCol = et ? toCol(et) : sCol + 2;
+      let row = 1;
+      while(occupied.some(o => o.row === row && !(eCol <= o.start || sCol >= o.end))) row++;
+      occupied.push({row, start: sCol, end: eCol});
+      const style = CHIP_STYLES[ti.boothId] || CHIP_STYLES.default;
+      eventsHTML += `<div class="event-chip" style="grid-column:${sCol}/${eCol};grid-row:${row};background:${style.bg};border-color:${style.border};color:${style.color}">
+        <div class="chip-name">${ti.member}${ti.qty>1?' ×'+ti.qty:''}</div>
+        <div class="chip-booth">${ti.boothName}</div>
+        <button class="chip-del" onclick="removeOrder('${ti.key}')">×</button>
+      </div>`;
+    });
+    tlHTML += `<div class="tl-body-row">
+      <div class="tl-day-cell">${DAY_LABELS[day]}</div>
+      <div class="tl-track">${eventsHTML}</div>
+    </div>`;
+  });
+
+  document.getElementById('tlContainer').innerHTML = tlHTML;
+}
+
+function setTlDay(d) {
+  tlFilterDay = d;
+  updateSum();
 }
 
 initMembers();

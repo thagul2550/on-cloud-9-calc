@@ -6,6 +6,7 @@
 <title>BNK48 × CGM48 — On Cloud 9 Festival</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root {
   --pink: #ff6b9d;
@@ -1088,28 +1089,15 @@ function setTlDay(d) {
   updateSum();
 }
 
-// ─── PDF EXPORT ───
+// ─── PDF EXPORT via html2canvas ───
 async function downloadPDF() {
   const btn = document.getElementById('pdfBtn');
   btn.classList.add('loading');
-  btn.textContent = '⏳ กำลังสร้าง PDF...';
+  btn.innerHTML = '⏳ กำลังสร้าง PDF...';
 
-  await new Promise(r => setTimeout(r, 50));
+  await new Promise(r => setTimeout(r, 80));
 
   try {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-    const W = 210, H = 297;
-    const ML = 14, MR = 14, MT = 14;
-    const CW = W - ML - MR;
-
-    // ── Color helpers ──
-    const hexToRgb = h => {
-      const r = parseInt(h.slice(1,3),16), g = parseInt(h.slice(3,5),16), b = parseInt(h.slice(5,7),16);
-      return [r, g, b];
-    };
-
     // ── Gather data ──
     const rows = [];
     const tlMap = {};
@@ -1122,340 +1110,250 @@ async function downloadPDF() {
       if(!booth) return;
       const slot = ((SCHED[boothId] || {})[day] || [])[parseInt(idxStr)];
       if(!slot) return;
-
       let displayName = member === '⭐ กิจกรรมเวที'
         ? slot.slice(1).filter(m => m !== '⭐ กิจกรรมเวที').join(', ')
         : member;
-
       const t = booth.tickets * qty;
       const c = t * TICKET_PRICE;
       total += c; totalTickets += t;
-
-      rows.push({ displayName, boothShort: booth.short, day, time: slot[0], qty, t, c, boothId });
+      rows.push({ displayName, boothName: booth.name, boothShort: booth.short, day, time: slot[0], qty, t, c, boothId });
       if(!tlMap[day]) tlMap[day] = [];
-      tlMap[day].push({ time: slot[0], boothShort: booth.short, member: displayName, qty, boothId });
+      tlMap[day].push({ time: slot[0], boothShort: booth.short, boothName: booth.name, member: displayName, qty, boothId });
     });
 
-    // Sort by day then time
     const dayOrder = { "30 May 2026": 0, "31 May 2026": 1, "1 June 2026": 2 };
     rows.sort((a, b) => dayOrder[a.day] - dayOrder[b.day] || a.time.localeCompare(b.time));
 
-    let y = MT;
+    const dayFull = {
+      "30 May 2026":  "เสาร์ 30 พฤษภาคม 2026",
+      "31 May 2026":  "อาทิตย์ 31 พฤษภาคม 2026",
+      "1 June 2026":  "จันทร์ 1 มิถุนายน 2026"
+    };
 
-    // ────────────────────────────────────────────
-    // PAGE HEADER
-    // ────────────────────────────────────────────
-    // Pink gradient bar
-    doc.setFillColor(255, 107, 157);
-    doc.rect(0, 0, W, 40, 'F');
-    doc.setFillColor(212, 165, 255);
-    doc.rect(0, 28, W, 12, 'F');
-    doc.setFillColor(255, 107, 157);
-    doc.setGlobalAlpha(0.4);
-    doc.rect(120, 0, 90, 40, 'F');
-    doc.setGlobalAlpha(1);
-
-    // Title text (use Helvetica — jsPDF built-in)
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.setTextColor(255, 255, 255);
-    doc.text('BNK48 x CGM48 — On Cloud 9 Festival', ML, 16);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(255, 230, 245);
-    doc.text('30 May – 1 June 2026  |  MCC Hall, The Mall Lifestore Bangkae', ML, 24);
-
-    // Sub bar
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(80, 20, 80);
-    doc.text('My Schedule & Ticket Plan', ML, 36);
-
-    y = 50;
-
-    // ────────────────────────────────────────────
-    // HELPER: section header
-    // ────────────────────────────────────────────
-    function sectionHeader(title, icon, yPos) {
-      doc.setFillColor(245, 240, 255);
-      doc.roundedRect(ML, yPos, CW, 8, 2, 2, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(109, 40, 217);
-      doc.text(icon + ' ' + title, ML + 3, yPos + 5.5);
-      return yPos + 11;
-    }
-
-    function checkPage(yPos, need = 20) {
-      if(yPos + need > H - 16) {
-        doc.addPage();
-        return MT;
-      }
-      return yPos;
-    }
-
-    // ────────────────────────────────────────────
-    // TIMELINE SECTION — per day grid
-    // ────────────────────────────────────────────
-    y = sectionHeader('Timeline', '📅', y);
-
-    const times = ['10:30','11:30','12:30','13:30','14:30','15:30','16:30','17:30','18:30','19:30','20:30'];
-    const tlDayLabelW = 22;
-    const tlW = CW - tlDayLabelW;
-    const slotW = tlW / 22; // 22 half-hour cols (10:30 to 21:30)
+    const chipStyle = {
+      fanmeet:  { bg:'#f3e8ff', color:'#7e22ce', border:'#d8b4fe' },
+      chabacha: { bg:'#fce7f3', color:'#be185d', border:'#fbcfe8' },
+      sns:      { bg:'#dcfce7', color:'#047857', border:'#6ee7b7' },
+      hill:     { bg:'#fff7ed', color:'#c2410c', border:'#fed7aa' },
+      default:  { bg:'#eff6ff', color:'#1d4ed8', border:'#bfdbfe' },
+    };
 
     function toHalfHour(tStr) {
       const [h, m] = tStr.split(':').map(Number);
       return (h * 60 + m - 630) / 30;
     }
 
-    const chipColors = {
-      fanmeet:  { bg: [243,232,255], text: [126,34,206], border: [216,180,254] },
-      chabacha: { bg: [252,231,243], text: [190,24,93],  border: [251,207,232] },
-      sns:      { bg: [220,252,231], text: [4,120,87],   border: [110,231,183] },
-      hill:     { bg: [255,247,237], text: [194,65,12],  border: [254,215,170] },
-      default:  { bg: [239,246,255], text: [29,78,216],  border: [191,219,254] },
-    };
+    // ── Build timeline HTML ──
+    const times = ['10:30','11:30','12:30','13:30','14:30','15:30','16:30','17:30','18:30','19:30','20:30'];
+    const COLS = 22;
 
-    const dayShorts = {
-      "30 May 2026": "Sat 30/5",
-      "31 May 2026": "Sun 31/5",
-      "1 June 2026": "Mon 1/6",
-    };
+    function buildTimeline() {
+      let html = `<div style="overflow:hidden;border:1.5px solid #e9d5ff;border-radius:12px;font-family:'Noto Sans Thai',sans-serif;width:100%;table-layout:fixed;">`;
+      // header
+      html += `<div style="display:flex;background:#f5f0ff;border-bottom:1px solid #e9d5ff;width:100%;">
+        <div style="width:72px;min-width:72px;flex-shrink:0;padding:6px 4px;font-size:9px;font-weight:700;color:#7c3aed;border-right:1px solid #e9d5ff;text-align:center;">วัน</div>
+        <div style="flex:1;min-width:0;display:grid;grid-template-columns:repeat(${COLS},1fr);">
+          ${times.map(t => `<div style="grid-column:span 2;font-size:8.5px;font-weight:600;color:#6d28d9;padding:6px 2px;border-right:1px dashed #ddd6fe;overflow:hidden;">${t}</div>`).join('')}
+        </div>
+      </div>`;
 
-    // Header row: time labels
-    y = checkPage(y, 30);
-    doc.setFillColor(248, 246, 255);
-    doc.rect(ML, y, CW, 6, 'F');
-    doc.setFillColor(230, 220, 250);
-    doc.rect(ML, y, tlDayLabelW, 6, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6);
-    doc.setTextColor(100, 80, 140);
-    doc.text('Date', ML + 2, y + 4.2);
+      DAYS.forEach(day => {
+        const items = tlMap[day] || [];
+        if(!items.length) return;
 
-    times.forEach((t, i) => {
-      const x = ML + tlDayLabelW + i * slotW * 2;
-      doc.setTextColor(80, 60, 120);
-      doc.text(t, x + 1, y + 4.2);
-      // vertical grid line
-      doc.setDrawColor(210, 195, 240);
-      doc.setLineWidth(0.1);
-      doc.line(x, y, x, y + 6);
-    });
-    y += 6;
+        // lay out chips avoiding overlap
+        const occupied = [];
+        const chips = items.map(ti => {
+          const [st, et] = ti.time.split('–');
+          const sH = toHalfHour(st);
+          const eH = et ? toHalfHour(et) : sH + 2;
+          let row = 0;
+          while(occupied.some(o => o.row === row && !(eH <= o.start || sH >= o.end))) row++;
+          occupied.push({ row, start: sH, end: eH });
+          return { ...ti, sH, eH, row };
+        });
+        const maxRow = chips.reduce((m, c) => Math.max(m, c.row), 0);
+        const rowH = 28;
+        const trackH = (maxRow + 1) * rowH + 8;
 
-    // Draw each day
-    DAYS.forEach(day => {
-      const items = tlMap[day] || [];
-      if(!items.length) return;
+        html += `<div style="display:flex;border-bottom:1px solid #f0e8ff;width:100%;">
+          <div style="width:72px;min-width:72px;flex-shrink:0;padding:6px 4px;font-size:8.5px;font-weight:700;color:#6d28d9;border-right:1px solid #e9d5ff;background:#faf5ff;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.4;">${dayFull[day].replace(' ', '<br>')}</div>
+          <div style="flex:1;min-width:0;position:relative;height:${trackH}px;overflow:hidden;background:repeating-linear-gradient(to right,transparent,transparent calc(100%/${COLS}*2 - 1px),#f5f0ff calc(100%/${COLS}*2 - 1px),#f5f0ff calc(100%/${COLS}*2));">`;
 
-      y = checkPage(y, 16);
+        chips.forEach(c => {
+          const s = chipStyle[c.boothId] || chipStyle.default;
+          const leftPct = (c.sH / COLS) * 100;
+          const widthPct = ((c.eH - c.sH) / COLS) * 100;
+          const topPx = c.row * rowH + 4;
+          html += `<div style="position:absolute;left:calc(${leftPct}% + 2px);width:calc(${widthPct}% - 4px);top:${topPx}px;height:${rowH - 6}px;background:${s.bg};border:1px solid ${s.border};border-radius:6px;padding:3px 5px;overflow:hidden;box-sizing:border-box;">
+            <div style="font-size:9px;font-weight:700;color:${s.color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.qty > 1 ? '×' + c.qty + ' ' : ''}${c.member}</div>
+            <div style="font-size:7.5px;color:${s.color};opacity:0.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.boothShort}</div>
+          </div>`;
+        });
 
-      // Day label col
-      doc.setFillColor(248, 246, 255);
-      doc.rect(ML, y, CW, 14, 'F');
-      doc.setFillColor(240, 230, 255);
-      doc.rect(ML, y, tlDayLabelW, 14, 'F');
-
-      // Day label
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.5);
-      doc.setTextColor(90, 50, 150);
-      const dlParts = dayShorts[day].split(' ');
-      doc.text(dlParts[0], ML + 2, y + 5);
-      doc.text(dlParts[1], ML + 2, y + 10);
-
-      // Horizontal border
-      doc.setDrawColor(220, 205, 245);
-      doc.setLineWidth(0.2);
-      doc.line(ML, y, ML + CW, y);
-
-      // Chips
-      const occupied = [];
-      items.forEach(ti => {
-        const [st, et] = ti.time.split('–');
-        const sHalf = toHalfHour(st);
-        const eHalf = et ? toHalfHour(et) : sHalf + 2;
-
-        let row = 0;
-        while(occupied.some(o => o.row === row && !(eHalf <= o.start || sHalf >= o.end))) row++;
-        occupied.push({ row, start: sHalf, end: eHalf });
-
-        const cx = ML + tlDayLabelW + sHalf * slotW;
-        const cw = (eHalf - sHalf) * slotW - 1;
-        const cy = y + row * 7 + 1;
-        const ch = 6;
-
-        const cs = chipColors[ti.boothId] || chipColors.default;
-        doc.setFillColor(...cs.bg);
-        doc.setDrawColor(...cs.border);
-        doc.setLineWidth(0.3);
-        doc.roundedRect(cx, cy, cw, ch, 1, 1, 'FD');
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(5.5);
-        doc.setTextColor(...cs.text);
-        const nameStr = (ti.qty > 1 ? 'x' + ti.qty + ' ' : '') + ti.member;
-        doc.text(nameStr, cx + 1.5, cy + 3.2, { maxWidth: cw - 2 });
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(4.5);
-        doc.text(ti.boothShort, cx + 1.5, cy + 5.2, { maxWidth: cw - 2 });
+        html += `</div></div>`;
       });
 
-      // Vertical grid lines over track
-      times.forEach((t, i) => {
-        const x = ML + tlDayLabelW + i * slotW * 2;
-        doc.setDrawColor(220, 205, 245);
-        doc.setLineWidth(0.1);
-        doc.line(x, y, x, y + 14);
+      html += `</div>`;
+      return html;
+    }
+
+    // ── Build schedule table HTML ──
+    function buildTable() {
+      let html = `<table style="width:100%;border-collapse:collapse;font-family:'Noto Sans Thai',sans-serif;font-size:11px;">
+        <thead>
+          <tr style="background:linear-gradient(135deg,#1a0a2e,#2d1b4e);">
+            <th style="color:#fff;padding:8px 10px;text-align:left;font-weight:700;border-radius:0;">สมาชิก / กิจกรรม</th>
+            <th style="color:#fff;padding:8px 10px;text-align:left;font-weight:700;">วัน</th>
+            <th style="color:#fff;padding:8px 10px;text-align:left;font-weight:700;">เวลา</th>
+            <th style="color:#fff;padding:8px 10px;text-align:left;font-weight:700;">บูธ</th>
+            <th style="color:#fff;padding:8px 10px;text-align:center;font-weight:700;">Tickets</th>
+            <th style="color:#fff;padding:8px 10px;text-align:right;font-weight:700;">ราคา</th>
+          </tr>
+        </thead><tbody>`;
+
+      let currentDay = null;
+      let alt = false;
+      rows.forEach(r => {
+        if(r.day !== currentDay) {
+          currentDay = r.day;
+          alt = false;
+          html += `<tr><td colspan="6" style="background:#f5f0ff;padding:7px 10px;font-weight:700;font-size:11px;color:#6d28d9;">📅 ${dayFull[r.day]}</td></tr>`;
+        }
+        const bg = alt ? '#faf8ff' : '#fff';
+        const dayShort = { "30 May 2026":"เสาร์ 30/5","31 May 2026":"อาทิตย์ 31/5","1 June 2026":"จันทร์ 1/6" };
+        const ticketCell = r.t > 0
+          ? `<span style="background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:2px 8px;font-weight:700;color:#92400e;font-size:10px;">${r.t}${r.qty > 1 ? ' (×' + r.qty + ')' : ''}</span>`
+          : `<span style="color:#059669;font-weight:600;">Free</span>`;
+        const costCell = r.c > 0
+          ? `<span style="color:#ff3d79;font-weight:700;">฿${r.c.toLocaleString()}</span>`
+          : `<span style="color:#059669;">-</span>`;
+        html += `<tr style="background:${bg};border-bottom:1px solid #f0e8ff;">
+          <td style="padding:8px 10px;font-weight:600;color:#1a0a2e;">${r.displayName}</td>
+          <td style="padding:8px 10px;color:#4b5563;">${dayShort[r.day] || r.day}</td>
+          <td style="padding:8px 10px;color:#374151;font-family:monospace;">${r.time}</td>
+          <td style="padding:8px 10px;color:#4b5563;">${r.boothShort}</td>
+          <td style="padding:8px 10px;text-align:center;">${ticketCell}</td>
+          <td style="padding:8px 10px;text-align:right;">${costCell}</td>
+        </tr>`;
+        alt = !alt;
       });
 
-      y += 14;
+      html += `</tbody></table>`;
+      return html;
+    }
+
+    // ── Assemble full print div ──
+    const printDiv = document.createElement('div');
+    printDiv.style.cssText = `
+      position:fixed; left:-9999px; top:0;
+      width:900px; min-width:900px; max-width:900px;
+      background:#fffaf7;
+      font-family:'Noto Sans Thai',sans-serif;
+      padding:0; margin:0; overflow:hidden;
+    `;
+
+    printDiv.innerHTML = `
+      <!-- HEADER -->
+      <div style="background:linear-gradient(135deg,#ff6b9d,#d4a5ff);padding:28px 32px 20px;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:#fff;opacity:.8;margin-bottom:6px;text-transform:uppercase;">Fan Event Planner 🌸</div>
+        <div style="font-size:26px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:6px;">BNK48 × CGM48 — On Cloud 9 Festival</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.85);">30 พฤษภาคม – 1 มิถุนายน 2026 · MCC Hall, The Mall Lifestore Bangkae</div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <span style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:99px;padding:4px 14px;font-size:11px;color:#fff;font-weight:600;">รวม ${totalTickets} tickets</span>
+          <span style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:99px;padding:4px 14px;font-size:11px;color:#fff;font-weight:600;">รวมทั้งหมด ฿${total.toLocaleString()} THB</span>
+        </div>
+      </div>
+
+      <div style="padding:24px 32px;">
+
+        <!-- TIMELINE -->
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#7a6892;text-transform:uppercase;margin-bottom:10px;">📅 ตารางเวลา</div>
+        ${buildTimeline()}
+
+        <!-- TABLE -->
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#7a6892;text-transform:uppercase;margin:24px 0 10px;">🗒 รายการกิจกรรมที่เลือก</div>
+        <div style="border:1.5px solid #e9d5ff;border-radius:12px;overflow:hidden;">
+          ${buildTable()}
+        </div>
+
+        <!-- TOTAL BOX -->
+        <div style="margin-top:20px;background:linear-gradient(135deg,#1a0a2e,#2d1b4e);border-radius:16px;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#d4a5ff;margin-bottom:4px;">รวมค่าใช้จ่ายทั้งหมด</div>
+            <div style="font-size:11px;color:#a78bca;">รวม ${totalTickets} tickets จาก ${rows.length} รอบกิจกรรม</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:30px;font-weight:700;color:#ff6b9d;line-height:1;">฿${total.toLocaleString()}</div>
+            <div style="font-size:11px;color:#a78bca;margin-top:2px;">THB</div>
+          </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div style="margin-top:16px;text-align:center;font-size:9px;color:#9ca3af;">
+          สร้างโดย BNK48 × CGM48 Fan Event Planner · ${new Date().toLocaleDateString('th-TH', {year:'numeric',month:'long',day:'numeric'})}
+        </div>
+
+      </div>
+    `;
+
+    document.body.appendChild(printDiv);
+
+    // Wait for fonts
+    await document.fonts.ready;
+    await new Promise(r => setTimeout(r, 300));
+
+    const canvas = await html2canvas(printDiv, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#fffaf7',
+      logging: false,
+      width: 900,
+      windowWidth: 900,
     });
 
-    y += 6;
+    document.body.removeChild(printDiv);
 
-    // ────────────────────────────────────────────
-    // SCHEDULE LIST — grouped by day
-    // ────────────────────────────────────────────
-    y = checkPage(y, 20);
-    y = sectionHeader('รายการกิจกรรมที่เลือก', '🗒', y);
+    const { jsPDF } = window.jspdf;
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const imgW = canvas.width;
+    const imgH = canvas.height;
 
-    // Table header
-    const colW = [50, 32, 35, 28, 30, 21];
-    const headers = ['สมาชิก / กิจกรรม', 'วัน', 'เวลา', 'บูธ', 'Tickets', 'ราคา'];
-    const colX = [ML];
-    for(let i = 1; i < colW.length; i++) colX.push(colX[i-1] + colW[i-1]);
+    const pdfW = 210;
+    const pdfH = Math.ceil((imgH / imgW) * pdfW);
 
-    const drawTableHeader = (yPos) => {
-      doc.setFillColor(26, 10, 46);
-      doc.rect(ML, yPos, CW, 7, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.setTextColor(255, 255, 255);
-      headers.forEach((h, i) => doc.text(h, colX[i] + 2, yPos + 5));
-      return yPos + 7;
-    };
+    // If taller than A4, split into pages
+    const pageH = 297;
+    const pxPerMm = imgW / pdfW;
+    const pageHeightPx = pageH * pxPerMm;
 
-    y = drawTableHeader(y);
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pdfW, Math.min(pdfH, pageH)] });
 
-    let altRow = false;
-    let currentDay = null;
-
-    rows.forEach(r => {
-      y = checkPage(y, 10);
-      if(y === MT) y = drawTableHeader(y);
-
-      // Day group header
-      if(r.day !== currentDay) {
-        currentDay = r.day;
-        doc.setFillColor(245, 240, 255);
-        doc.rect(ML, y, CW, 6, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7);
-        doc.setTextColor(109, 40, 217);
-        const dayFull = { "30 May 2026":"เสาร์ 30 พ.ค. 2026","31 May 2026":"อาทิตย์ 31 พ.ค. 2026","1 June 2026":"จันทร์ 1 มิ.ย. 2026" };
-        doc.text('  ' + (dayFull[r.day] || r.day), ML + 2, y + 4.2);
-        y += 6;
-        altRow = false;
+    if(pdfH <= pageH) {
+      doc.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+    } else {
+      // multi-page: slice canvas per page
+      let remainH = imgH;
+      let pageNum = 0;
+      while(remainH > 0) {
+        const sliceH = Math.min(pageHeightPx, remainH);
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = imgW;
+        sliceCanvas.height = sliceH;
+        const ctx = sliceCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, pageNum * pageHeightPx, imgW, sliceH, 0, 0, imgW, sliceH);
+        const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.95);
+        if(pageNum > 0) doc.addPage([pdfW, pageH]);
+        const sliceMmH = (sliceH / pxPerMm);
+        doc.addImage(sliceData, 'JPEG', 0, 0, pdfW, sliceMmH);
+        remainH -= sliceH;
+        pageNum++;
       }
-
-      // Row bg
-      if(altRow) {
-        doc.setFillColor(250, 248, 255);
-        doc.rect(ML, y, CW, 8, 'F');
-      }
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.setTextColor(26, 10, 46);
-      doc.text(r.displayName, colX[0] + 2, y + 5.2, { maxWidth: colW[0] - 3 });
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.setTextColor(80, 60, 100);
-      doc.text(dayShorts[r.day] || r.day, colX[1] + 2, y + 5.2);
-      doc.text(r.time, colX[2] + 2, y + 5.2);
-      doc.text(r.boothShort, colX[3] + 2, y + 5.2, { maxWidth: colW[3] - 3 });
-
-      // Tickets badge
-      if(r.t > 0) {
-        doc.setFillColor(249, 199, 79, 0.3);
-        doc.roundedRect(colX[4] + 1, y + 1, colW[4] - 2, 6, 1.5, 1.5, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7);
-        doc.setTextColor(130, 90, 0);
-        doc.text(r.t + (r.qty > 1 ? ' (x' + r.qty + ')' : ''), colX[4] + 3, y + 5.2);
-      } else {
-        doc.setTextColor(16, 120, 80);
-        doc.text('Free', colX[4] + 3, y + 5.2);
-      }
-
-      // Cost
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.setTextColor(r.c > 0 ? 220 : 16, r.c > 0 ? 60 : 120, r.c > 0 ? 100 : 80);
-      doc.text(r.c > 0 ? '\u0e3f' + r.c.toLocaleString() : '-', colX[5] + 2, y + 5.2);
-
-      // Bottom border
-      doc.setDrawColor(220, 210, 240);
-      doc.setLineWidth(0.15);
-      doc.line(ML, y + 8, ML + CW, y + 8);
-
-      y += 8;
-      altRow = !altRow;
-    });
-
-    y += 4;
-
-    // ────────────────────────────────────────────
-    // TOTAL SUMMARY BOX
-    // ────────────────────────────────────────────
-    y = checkPage(y, 28);
-
-    doc.setFillColor(26, 10, 46);
-    doc.roundedRect(ML, y, CW, 22, 3, 3, 'F');
-
-    // Decorative accent
-    doc.setFillColor(255, 107, 157);
-    doc.roundedRect(ML, y, 5, 22, 3, 3, 'F');
-    doc.rect(ML + 2, y, 3, 22, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(212, 165, 255);
-    doc.text('รวมค่าใช้จ่ายทั้งหมด', ML + 9, y + 8);
-
-    doc.setFontSize(8);
-    doc.setTextColor(200, 180, 230);
-    doc.text('รวม ' + totalTickets + ' tickets', ML + 9, y + 15);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.setTextColor(255, 107, 157);
-    const totalStr = '\u0e3f' + total.toLocaleString() + ' THB';
-    doc.text(totalStr, ML + CW - 4, y + 14, { align: 'right' });
-
-    y += 26;
-
-    // ────────────────────────────────────────────
-    // FOOTER on each page
-    // ────────────────────────────────────────────
-    const pageCount = doc.getNumberOfPages();
-    for(let p = 1; p <= pageCount; p++) {
-      doc.setPage(p);
-      doc.setFillColor(245, 240, 255);
-      doc.rect(0, H - 10, W, 10, 'F');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.5);
-      doc.setTextColor(150, 120, 180);
-      doc.text('BNK48 x CGM48 On Cloud 9 Festival 2026  |  Generated by Fan Planner', ML, H - 4);
-      doc.text('Page ' + p + ' / ' + pageCount, W - MR, H - 4, { align: 'right' });
     }
 
     doc.save('BNK48-CGM48-OnCloud9-MySchedule.pdf');
+
   } catch(err) {
     alert('เกิดข้อผิดพลาด: ' + err.message);
     console.error(err);

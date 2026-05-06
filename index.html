@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BNK48 × CGM48 — On Cloud 9 Festival</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
   --pink: #ff6b9d;
@@ -659,6 +660,36 @@ body{
 }
 .clear-btn:hover { background: #fee2e2; border-color: #fca5a5; }
 
+/* PDF Download button */
+.pdf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, #1a0a2e, #2d1b4e);
+  border: 1.5px solid rgba(212,165,255,0.3);
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Noto Sans Thai', sans-serif;
+  transition: all .2s;
+  box-shadow: 0 4px 16px rgba(26,10,46,0.25);
+  margin-top: 14px;
+  width: 100%;
+  justify-content: center;
+}
+.pdf-btn:hover {
+  background: linear-gradient(135deg, #2d1b4e, #4a2878);
+  border-color: var(--lilac);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(26,10,46,0.3);
+}
+.pdf-btn:active { transform: translateY(0); }
+.pdf-btn .pdf-ico { font-size: 16px; }
+.pdf-btn.loading { opacity: 0.7; cursor: wait; pointer-events: none; }
+
 /* No sched */
 .no-sched {
   text-align: center;
@@ -744,6 +775,9 @@ body{
             <div class="sum-ticket-count" id="ticketCount"></div>
           </div>
         </div>
+        <button class="pdf-btn" id="pdfBtn" onclick="downloadPDF()">
+          <span class="pdf-ico">📄</span> ดาวน์โหลดตาราง PDF
+        </button>
       </div>
     </div>
   </div>
@@ -1052,6 +1086,383 @@ function updateSum() {
 function setTlDay(d) {
   tlFilterDay = d;
   updateSum();
+}
+
+// ─── PDF EXPORT ───
+async function downloadPDF() {
+  const btn = document.getElementById('pdfBtn');
+  btn.classList.add('loading');
+  btn.textContent = '⏳ กำลังสร้าง PDF...';
+
+  await new Promise(r => setTimeout(r, 50));
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const W = 210, H = 297;
+    const ML = 14, MR = 14, MT = 14;
+    const CW = W - ML - MR;
+
+    // ── Color helpers ──
+    const hexToRgb = h => {
+      const r = parseInt(h.slice(1,3),16), g = parseInt(h.slice(3,5),16), b = parseInt(h.slice(5,7),16);
+      return [r, g, b];
+    };
+
+    // ── Gather data ──
+    const rows = [];
+    const tlMap = {};
+    let total = 0, totalTickets = 0;
+
+    Object.entries(state.selections).forEach(([key, qty]) => {
+      if(!qty) return;
+      const [member, boothId, day, idxStr] = key.split('|');
+      const booth = BOOTHS.find(b => b.id === boothId);
+      if(!booth) return;
+      const slot = ((SCHED[boothId] || {})[day] || [])[parseInt(idxStr)];
+      if(!slot) return;
+
+      let displayName = member === '⭐ กิจกรรมเวที'
+        ? slot.slice(1).filter(m => m !== '⭐ กิจกรรมเวที').join(', ')
+        : member;
+
+      const t = booth.tickets * qty;
+      const c = t * TICKET_PRICE;
+      total += c; totalTickets += t;
+
+      rows.push({ displayName, boothShort: booth.short, day, time: slot[0], qty, t, c, boothId });
+      if(!tlMap[day]) tlMap[day] = [];
+      tlMap[day].push({ time: slot[0], boothShort: booth.short, member: displayName, qty, boothId });
+    });
+
+    // Sort by day then time
+    const dayOrder = { "30 May 2026": 0, "31 May 2026": 1, "1 June 2026": 2 };
+    rows.sort((a, b) => dayOrder[a.day] - dayOrder[b.day] || a.time.localeCompare(b.time));
+
+    let y = MT;
+
+    // ────────────────────────────────────────────
+    // PAGE HEADER
+    // ────────────────────────────────────────────
+    // Pink gradient bar
+    doc.setFillColor(255, 107, 157);
+    doc.rect(0, 0, W, 40, 'F');
+    doc.setFillColor(212, 165, 255);
+    doc.rect(0, 28, W, 12, 'F');
+    doc.setFillColor(255, 107, 157);
+    doc.setGlobalAlpha(0.4);
+    doc.rect(120, 0, 90, 40, 'F');
+    doc.setGlobalAlpha(1);
+
+    // Title text (use Helvetica — jsPDF built-in)
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(255, 255, 255);
+    doc.text('BNK48 x CGM48 — On Cloud 9 Festival', ML, 16);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(255, 230, 245);
+    doc.text('30 May – 1 June 2026  |  MCC Hall, The Mall Lifestore Bangkae', ML, 24);
+
+    // Sub bar
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(80, 20, 80);
+    doc.text('My Schedule & Ticket Plan', ML, 36);
+
+    y = 50;
+
+    // ────────────────────────────────────────────
+    // HELPER: section header
+    // ────────────────────────────────────────────
+    function sectionHeader(title, icon, yPos) {
+      doc.setFillColor(245, 240, 255);
+      doc.roundedRect(ML, yPos, CW, 8, 2, 2, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(109, 40, 217);
+      doc.text(icon + ' ' + title, ML + 3, yPos + 5.5);
+      return yPos + 11;
+    }
+
+    function checkPage(yPos, need = 20) {
+      if(yPos + need > H - 16) {
+        doc.addPage();
+        return MT;
+      }
+      return yPos;
+    }
+
+    // ────────────────────────────────────────────
+    // TIMELINE SECTION — per day grid
+    // ────────────────────────────────────────────
+    y = sectionHeader('Timeline', '📅', y);
+
+    const times = ['10:30','11:30','12:30','13:30','14:30','15:30','16:30','17:30','18:30','19:30','20:30'];
+    const tlDayLabelW = 22;
+    const tlW = CW - tlDayLabelW;
+    const slotW = tlW / 22; // 22 half-hour cols (10:30 to 21:30)
+
+    function toHalfHour(tStr) {
+      const [h, m] = tStr.split(':').map(Number);
+      return (h * 60 + m - 630) / 30;
+    }
+
+    const chipColors = {
+      fanmeet:  { bg: [243,232,255], text: [126,34,206], border: [216,180,254] },
+      chabacha: { bg: [252,231,243], text: [190,24,93],  border: [251,207,232] },
+      sns:      { bg: [220,252,231], text: [4,120,87],   border: [110,231,183] },
+      hill:     { bg: [255,247,237], text: [194,65,12],  border: [254,215,170] },
+      default:  { bg: [239,246,255], text: [29,78,216],  border: [191,219,254] },
+    };
+
+    const dayShorts = {
+      "30 May 2026": "Sat 30/5",
+      "31 May 2026": "Sun 31/5",
+      "1 June 2026": "Mon 1/6",
+    };
+
+    // Header row: time labels
+    y = checkPage(y, 30);
+    doc.setFillColor(248, 246, 255);
+    doc.rect(ML, y, CW, 6, 'F');
+    doc.setFillColor(230, 220, 250);
+    doc.rect(ML, y, tlDayLabelW, 6, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6);
+    doc.setTextColor(100, 80, 140);
+    doc.text('Date', ML + 2, y + 4.2);
+
+    times.forEach((t, i) => {
+      const x = ML + tlDayLabelW + i * slotW * 2;
+      doc.setTextColor(80, 60, 120);
+      doc.text(t, x + 1, y + 4.2);
+      // vertical grid line
+      doc.setDrawColor(210, 195, 240);
+      doc.setLineWidth(0.1);
+      doc.line(x, y, x, y + 6);
+    });
+    y += 6;
+
+    // Draw each day
+    DAYS.forEach(day => {
+      const items = tlMap[day] || [];
+      if(!items.length) return;
+
+      y = checkPage(y, 16);
+
+      // Day label col
+      doc.setFillColor(248, 246, 255);
+      doc.rect(ML, y, CW, 14, 'F');
+      doc.setFillColor(240, 230, 255);
+      doc.rect(ML, y, tlDayLabelW, 14, 'F');
+
+      // Day label
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.setTextColor(90, 50, 150);
+      const dlParts = dayShorts[day].split(' ');
+      doc.text(dlParts[0], ML + 2, y + 5);
+      doc.text(dlParts[1], ML + 2, y + 10);
+
+      // Horizontal border
+      doc.setDrawColor(220, 205, 245);
+      doc.setLineWidth(0.2);
+      doc.line(ML, y, ML + CW, y);
+
+      // Chips
+      const occupied = [];
+      items.forEach(ti => {
+        const [st, et] = ti.time.split('–');
+        const sHalf = toHalfHour(st);
+        const eHalf = et ? toHalfHour(et) : sHalf + 2;
+
+        let row = 0;
+        while(occupied.some(o => o.row === row && !(eHalf <= o.start || sHalf >= o.end))) row++;
+        occupied.push({ row, start: sHalf, end: eHalf });
+
+        const cx = ML + tlDayLabelW + sHalf * slotW;
+        const cw = (eHalf - sHalf) * slotW - 1;
+        const cy = y + row * 7 + 1;
+        const ch = 6;
+
+        const cs = chipColors[ti.boothId] || chipColors.default;
+        doc.setFillColor(...cs.bg);
+        doc.setDrawColor(...cs.border);
+        doc.setLineWidth(0.3);
+        doc.roundedRect(cx, cy, cw, ch, 1, 1, 'FD');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(5.5);
+        doc.setTextColor(...cs.text);
+        const nameStr = (ti.qty > 1 ? 'x' + ti.qty + ' ' : '') + ti.member;
+        doc.text(nameStr, cx + 1.5, cy + 3.2, { maxWidth: cw - 2 });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(4.5);
+        doc.text(ti.boothShort, cx + 1.5, cy + 5.2, { maxWidth: cw - 2 });
+      });
+
+      // Vertical grid lines over track
+      times.forEach((t, i) => {
+        const x = ML + tlDayLabelW + i * slotW * 2;
+        doc.setDrawColor(220, 205, 245);
+        doc.setLineWidth(0.1);
+        doc.line(x, y, x, y + 14);
+      });
+
+      y += 14;
+    });
+
+    y += 6;
+
+    // ────────────────────────────────────────────
+    // SCHEDULE LIST — grouped by day
+    // ────────────────────────────────────────────
+    y = checkPage(y, 20);
+    y = sectionHeader('รายการกิจกรรมที่เลือก', '🗒', y);
+
+    // Table header
+    const colW = [50, 32, 35, 28, 30, 21];
+    const headers = ['สมาชิก / กิจกรรม', 'วัน', 'เวลา', 'บูธ', 'Tickets', 'ราคา'];
+    const colX = [ML];
+    for(let i = 1; i < colW.length; i++) colX.push(colX[i-1] + colW[i-1]);
+
+    const drawTableHeader = (yPos) => {
+      doc.setFillColor(26, 10, 46);
+      doc.rect(ML, yPos, CW, 7, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(255, 255, 255);
+      headers.forEach((h, i) => doc.text(h, colX[i] + 2, yPos + 5));
+      return yPos + 7;
+    };
+
+    y = drawTableHeader(y);
+
+    let altRow = false;
+    let currentDay = null;
+
+    rows.forEach(r => {
+      y = checkPage(y, 10);
+      if(y === MT) y = drawTableHeader(y);
+
+      // Day group header
+      if(r.day !== currentDay) {
+        currentDay = r.day;
+        doc.setFillColor(245, 240, 255);
+        doc.rect(ML, y, CW, 6, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(109, 40, 217);
+        const dayFull = { "30 May 2026":"เสาร์ 30 พ.ค. 2026","31 May 2026":"อาทิตย์ 31 พ.ค. 2026","1 June 2026":"จันทร์ 1 มิ.ย. 2026" };
+        doc.text('  ' + (dayFull[r.day] || r.day), ML + 2, y + 4.2);
+        y += 6;
+        altRow = false;
+      }
+
+      // Row bg
+      if(altRow) {
+        doc.setFillColor(250, 248, 255);
+        doc.rect(ML, y, CW, 8, 'F');
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(26, 10, 46);
+      doc.text(r.displayName, colX[0] + 2, y + 5.2, { maxWidth: colW[0] - 3 });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(80, 60, 100);
+      doc.text(dayShorts[r.day] || r.day, colX[1] + 2, y + 5.2);
+      doc.text(r.time, colX[2] + 2, y + 5.2);
+      doc.text(r.boothShort, colX[3] + 2, y + 5.2, { maxWidth: colW[3] - 3 });
+
+      // Tickets badge
+      if(r.t > 0) {
+        doc.setFillColor(249, 199, 79, 0.3);
+        doc.roundedRect(colX[4] + 1, y + 1, colW[4] - 2, 6, 1.5, 1.5, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(130, 90, 0);
+        doc.text(r.t + (r.qty > 1 ? ' (x' + r.qty + ')' : ''), colX[4] + 3, y + 5.2);
+      } else {
+        doc.setTextColor(16, 120, 80);
+        doc.text('Free', colX[4] + 3, y + 5.2);
+      }
+
+      // Cost
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(r.c > 0 ? 220 : 16, r.c > 0 ? 60 : 120, r.c > 0 ? 100 : 80);
+      doc.text(r.c > 0 ? '\u0e3f' + r.c.toLocaleString() : '-', colX[5] + 2, y + 5.2);
+
+      // Bottom border
+      doc.setDrawColor(220, 210, 240);
+      doc.setLineWidth(0.15);
+      doc.line(ML, y + 8, ML + CW, y + 8);
+
+      y += 8;
+      altRow = !altRow;
+    });
+
+    y += 4;
+
+    // ────────────────────────────────────────────
+    // TOTAL SUMMARY BOX
+    // ────────────────────────────────────────────
+    y = checkPage(y, 28);
+
+    doc.setFillColor(26, 10, 46);
+    doc.roundedRect(ML, y, CW, 22, 3, 3, 'F');
+
+    // Decorative accent
+    doc.setFillColor(255, 107, 157);
+    doc.roundedRect(ML, y, 5, 22, 3, 3, 'F');
+    doc.rect(ML + 2, y, 3, 22, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(212, 165, 255);
+    doc.text('รวมค่าใช้จ่ายทั้งหมด', ML + 9, y + 8);
+
+    doc.setFontSize(8);
+    doc.setTextColor(200, 180, 230);
+    doc.text('รวม ' + totalTickets + ' tickets', ML + 9, y + 15);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(255, 107, 157);
+    const totalStr = '\u0e3f' + total.toLocaleString() + ' THB';
+    doc.text(totalStr, ML + CW - 4, y + 14, { align: 'right' });
+
+    y += 26;
+
+    // ────────────────────────────────────────────
+    // FOOTER on each page
+    // ────────────────────────────────────────────
+    const pageCount = doc.getNumberOfPages();
+    for(let p = 1; p <= pageCount; p++) {
+      doc.setPage(p);
+      doc.setFillColor(245, 240, 255);
+      doc.rect(0, H - 10, W, 10, 'F');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(150, 120, 180);
+      doc.text('BNK48 x CGM48 On Cloud 9 Festival 2026  |  Generated by Fan Planner', ML, H - 4);
+      doc.text('Page ' + p + ' / ' + pageCount, W - MR, H - 4, { align: 'right' });
+    }
+
+    doc.save('BNK48-CGM48-OnCloud9-MySchedule.pdf');
+  } catch(err) {
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+    console.error(err);
+  } finally {
+    btn.classList.remove('loading');
+    btn.innerHTML = '<span class="pdf-ico">📄</span> ดาวน์โหลดตาราง PDF';
+  }
 }
 
 initMembers();

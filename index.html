@@ -1094,7 +1094,6 @@ async function downloadPDF() {
   const btn = document.getElementById('pdfBtn');
   btn.classList.add('loading');
   btn.innerHTML = '⏳ กำลังสร้าง PDF...';
-
   await new Promise(r => setTimeout(r, 80));
 
   try {
@@ -1116,240 +1115,244 @@ async function downloadPDF() {
       const t = booth.tickets * qty;
       const c = t * TICKET_PRICE;
       total += c; totalTickets += t;
-      rows.push({ displayName, boothName: booth.name, boothShort: booth.short, day, time: slot[0], qty, t, c, boothId });
+      rows.push({ displayName, boothShort: booth.short, day, time: slot[0], qty, t, c, boothId });
       if(!tlMap[day]) tlMap[day] = [];
-      tlMap[day].push({ time: slot[0], boothShort: booth.short, boothName: booth.name, member: displayName, qty, boothId });
+      tlMap[day].push({ time: slot[0], boothShort: booth.short, member: displayName, qty, boothId });
     });
 
-    const dayOrder = { "30 May 2026": 0, "31 May 2026": 1, "1 June 2026": 2 };
-    rows.sort((a, b) => dayOrder[a.day] - dayOrder[b.day] || a.time.localeCompare(b.time));
+    const dayOrder = { "30 May 2026":0, "31 May 2026":1, "1 June 2026":2 };
+    rows.sort((a,b) => dayOrder[a.day]-dayOrder[b.day] || a.time.localeCompare(b.time));
 
     const dayFull = {
-      "30 May 2026":  "เสาร์ 30 พฤษภาคม 2026",
-      "31 May 2026":  "อาทิตย์ 31 พฤษภาคม 2026",
-      "1 June 2026":  "จันทร์ 1 มิถุนายน 2026"
+      "30 May 2026":"เสาร์ 30 พฤษภาคม 2026",
+      "31 May 2026":"อาทิตย์ 31 พฤษภาคม 2026",
+      "1 June 2026":"จันทร์ 1 มิถุนายน 2026"
     };
-
+    const dayShort = {
+      "30 May 2026":"เสาร์ 30/5",
+      "31 May 2026":"อาทิตย์ 31/5",
+      "1 June 2026":"จันทร์ 1/6"
+    };
     const chipStyle = {
-      fanmeet:  { bg:'#f3e8ff', color:'#7e22ce', border:'#d8b4fe' },
-      chabacha: { bg:'#fce7f3', color:'#be185d', border:'#fbcfe8' },
-      sns:      { bg:'#dcfce7', color:'#047857', border:'#6ee7b7' },
-      hill:     { bg:'#fff7ed', color:'#c2410c', border:'#fed7aa' },
-      default:  { bg:'#eff6ff', color:'#1d4ed8', border:'#bfdbfe' },
+      fanmeet:  {bg:'#f3e8ff',color:'#7e22ce',border:'#d8b4fe'},
+      chabacha: {bg:'#fce7f3',color:'#be185d',border:'#fbcfe8'},
+      sns:      {bg:'#dcfce7',color:'#047857',border:'#6ee7b7'},
+      hill:     {bg:'#fff7ed',color:'#c2410c',border:'#fed7aa'},
+      default:  {bg:'#eff6ff',color:'#1d4ed8',border:'#bfdbfe'},
     };
 
-    function toHalfHour(tStr) {
-      const [h, m] = tStr.split(':').map(Number);
-      return (h * 60 + m - 630) / 30;
+    function toHH(tStr) {
+      const [h,m] = tStr.split(':').map(Number);
+      return (h*60+m-630)/30;
     }
 
-    // ── Build timeline HTML ──
+    // ── Timeline — pure pixel positioning, no % widths ──
+    const COLS = 22; // half-hour slots 10:30–21:30
     const times = ['10:30','11:30','12:30','13:30','14:30','15:30','16:30','17:30','18:30','19:30','20:30'];
-    const COLS = 22;
+    const DAY_W = 60;
+    const SLOT_W = 32; // px per half-hour
+    const TRACK_W = COLS * SLOT_W; // 22 * 32 = 704px
+    const TL_W = DAY_W + TRACK_W;  // 764px
 
     function buildTimeline() {
-      let html = `<div style="overflow:hidden;border:1.5px solid #e9d5ff;border-radius:12px;font-family:'Noto Sans Thai',sans-serif;width:100%;table-layout:fixed;">`;
-      // header
-      html += `<div style="display:flex;background:#f5f0ff;border-bottom:1px solid #e9d5ff;width:100%;">
-        <div style="width:72px;min-width:72px;flex-shrink:0;padding:6px 4px;font-size:9px;font-weight:700;color:#7c3aed;border-right:1px solid #e9d5ff;text-align:center;">วัน</div>
-        <div style="flex:1;min-width:0;display:grid;grid-template-columns:repeat(${COLS},1fr);">
-          ${times.map(t => `<div style="grid-column:span 2;font-size:8.5px;font-weight:600;color:#6d28d9;padding:6px 2px;border-right:1px dashed #ddd6fe;overflow:hidden;">${t}</div>`).join('')}
-        </div>
-      </div>`;
+      let h = `<div style="width:${TL_W}px;border:1.5px solid #e9d5ff;border-radius:10px;overflow:hidden;">`;
 
+      // Header
+      h += `<div style="display:flex;background:#f5f0ff;border-bottom:1px solid #e9d5ff;">`;
+      h += `<div style="width:${DAY_W}px;min-width:${DAY_W}px;padding:5px 3px;font-size:8px;font-weight:700;color:#7c3aed;border-right:1px solid #e9d5ff;text-align:center;">วัน</div>`;
+      h += `<div style="position:relative;width:${TRACK_W}px;height:22px;">`;
+      times.forEach((t, i) => {
+        h += `<div style="position:absolute;left:${i*SLOT_W*2}px;top:0;width:${SLOT_W*2}px;height:22px;padding:5px 2px;font-size:8px;font-weight:600;color:#6d28d9;box-sizing:border-box;">${t}</div>`;
+      });
+      h += `</div></div>`;
+
+      // Day rows
       DAYS.forEach(day => {
         const items = tlMap[day] || [];
         if(!items.length) return;
-
-        // lay out chips avoiding overlap
         const occupied = [];
         const chips = items.map(ti => {
-          const [st, et] = ti.time.split('–');
-          const sH = toHalfHour(st);
-          const eH = et ? toHalfHour(et) : sH + 2;
+          const [st,et] = ti.time.split('–');
+          const sH = toHH(st), eH = et ? toHH(et) : sH+2;
           let row = 0;
-          while(occupied.some(o => o.row === row && !(eH <= o.start || sH >= o.end))) row++;
-          occupied.push({ row, start: sH, end: eH });
-          return { ...ti, sH, eH, row };
+          while(occupied.some(o => o.row===row && !(eH<=o.start || sH>=o.end))) row++;
+          occupied.push({row, start:sH, end:eH});
+          return {...ti, sH, eH, row};
         });
-        const maxRow = chips.reduce((m, c) => Math.max(m, c.row), 0);
-        const rowH = 28;
-        const trackH = (maxRow + 1) * rowH + 8;
+        const maxRow = chips.reduce((m,c) => Math.max(m,c.row), 0);
+        const ROW_H = 38;
+        const trackH = (maxRow+1)*ROW_H + 8;
 
-        html += `<div style="display:flex;border-bottom:1px solid #f0e8ff;width:100%;">
-          <div style="width:72px;min-width:72px;flex-shrink:0;padding:6px 4px;font-size:8.5px;font-weight:700;color:#6d28d9;border-right:1px solid #e9d5ff;background:#faf5ff;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.4;">${dayFull[day].replace(' ', '<br>')}</div>
-          <div style="flex:1;min-width:0;position:relative;height:${trackH}px;overflow:hidden;background:repeating-linear-gradient(to right,transparent,transparent calc(100%/${COLS}*2 - 1px),#f5f0ff calc(100%/${COLS}*2 - 1px),#f5f0ff calc(100%/${COLS}*2));">`;
-
+        h += `<div style="display:flex;border-top:1px solid #f0e8ff;">`;
+        h += `<div style="width:${DAY_W}px;min-width:${DAY_W}px;padding:4px 2px;font-size:7.5px;font-weight:700;color:#6d28d9;border-right:1px solid #e9d5ff;background:#faf5ff;text-align:center;display:flex;align-items:center;justify-content:center;line-height:1.4;">${dayFull[day].replace(/ /g,'<br>')}</div>`;
+        h += `<div style="position:relative;width:${TRACK_W}px;height:${trackH}px;overflow:hidden;">`;
+        // grid lines
+        times.forEach((t,i) => {
+          h += `<div style="position:absolute;left:${i*SLOT_W*2}px;top:0;width:1px;height:100%;background:#ede9fe;"></div>`;
+        });
+        // chips
         chips.forEach(c => {
           const s = chipStyle[c.boothId] || chipStyle.default;
-          const leftPct = (c.sH / COLS) * 100;
-          const widthPct = ((c.eH - c.sH) / COLS) * 100;
-          const topPx = c.row * rowH + 4;
-          html += `<div style="position:absolute;left:calc(${leftPct}% + 2px);width:calc(${widthPct}% - 4px);top:${topPx}px;height:${rowH - 6}px;background:${s.bg};border:1px solid ${s.border};border-radius:6px;padding:3px 5px;overflow:hidden;box-sizing:border-box;">
-            <div style="font-size:9px;font-weight:700;color:${s.color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.qty > 1 ? '×' + c.qty + ' ' : ''}${c.member}</div>
-            <div style="font-size:7.5px;color:${s.color};opacity:0.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.boothShort}</div>
-          </div>`;
+          const leftPx = c.sH * SLOT_W + 1;
+          const widthPx = (c.eH - c.sH) * SLOT_W - 3;
+          const topPx = c.row * ROW_H + 3;
+          h += `<div style="position:absolute;left:${leftPx}px;top:${topPx}px;width:${widthPx}px;height:${ROW_H-5}px;background:${s.bg};border:1px solid ${s.border};border-radius:5px;padding:3px 5px;overflow:hidden;box-sizing:border-box;">`;
+          h += `<div style="font-size:9.5px;font-weight:700;color:${s.color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;">${c.qty>1?'×'+c.qty+' ':''}${c.member}</div>`;
+          h += `<div style="font-size:8px;color:${s.color};opacity:0.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;">${c.boothShort}</div>`;
+          h += `</div>`;
         });
-
-        html += `</div></div>`;
+        h += `</div></div>`;
       });
 
-      html += `</div>`;
-      return html;
+      h += `</div>`;
+      return h;
     }
 
-    // ── Build schedule table HTML ──
+    // ── Table ──
     function buildTable() {
-      let html = `<table style="width:100%;border-collapse:collapse;font-family:'Noto Sans Thai',sans-serif;font-size:11px;">
-        <thead>
-          <tr style="background:linear-gradient(135deg,#1a0a2e,#2d1b4e);">
-            <th style="color:#fff;padding:8px 10px;text-align:left;font-weight:700;border-radius:0;">สมาชิก / กิจกรรม</th>
-            <th style="color:#fff;padding:8px 10px;text-align:left;font-weight:700;">วัน</th>
-            <th style="color:#fff;padding:8px 10px;text-align:left;font-weight:700;">เวลา</th>
-            <th style="color:#fff;padding:8px 10px;text-align:left;font-weight:700;">บูธ</th>
-            <th style="color:#fff;padding:8px 10px;text-align:center;font-weight:700;">Tickets</th>
-            <th style="color:#fff;padding:8px 10px;text-align:right;font-weight:700;">ราคา</th>
-          </tr>
-        </thead><tbody>`;
+      let h = `<table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:10.5px;">
+        <colgroup>
+          <col style="width:26%"><col style="width:15%"><col style="width:17%">
+          <col style="width:20%"><col style="width:11%"><col style="width:11%">
+        </colgroup>
+        <thead><tr style="background:linear-gradient(135deg,#1a0a2e,#2d1b4e);">
+          <th style="color:#fff;padding:7px 8px;text-align:left;font-weight:700;">สมาชิก / กิจกรรม</th>
+          <th style="color:#fff;padding:7px 8px;text-align:left;font-weight:700;">วัน</th>
+          <th style="color:#fff;padding:7px 8px;text-align:left;font-weight:700;">เวลา</th>
+          <th style="color:#fff;padding:7px 8px;text-align:left;font-weight:700;">บูธ</th>
+          <th style="color:#fff;padding:7px 8px;text-align:center;font-weight:700;">Tickets</th>
+          <th style="color:#fff;padding:7px 8px;text-align:right;font-weight:700;">ราคา</th>
+        </tr></thead><tbody>`;
 
-      let currentDay = null;
-      let alt = false;
+      let curDay=null, alt=false;
       rows.forEach(r => {
-        if(r.day !== currentDay) {
-          currentDay = r.day;
-          alt = false;
-          html += `<tr><td colspan="6" style="background:#f5f0ff;padding:7px 10px;font-weight:700;font-size:11px;color:#6d28d9;">📅 ${dayFull[r.day]}</td></tr>`;
+        if(r.day!==curDay){
+          curDay=r.day; alt=false;
+          h+=`<tr><td colspan="6" style="background:#f5f0ff;padding:6px 8px;font-weight:700;font-size:10.5px;color:#6d28d9;">📅 ${dayFull[r.day]}</td></tr>`;
         }
-        const bg = alt ? '#faf8ff' : '#fff';
-        const dayShort = { "30 May 2026":"เสาร์ 30/5","31 May 2026":"อาทิตย์ 31/5","1 June 2026":"จันทร์ 1/6" };
-        const ticketCell = r.t > 0
-          ? `<span style="background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:2px 8px;font-weight:700;color:#92400e;font-size:10px;">${r.t}${r.qty > 1 ? ' (×' + r.qty + ')' : ''}</span>`
+        const bg = alt?'#faf8ff':'#fff';
+        const tk = r.t>0
+          ? `<span style="background:#fef3c7;border:1px solid #fcd34d;border-radius:5px;padding:1px 6px;font-weight:700;color:#92400e;font-size:9.5px;">${r.t}${r.qty>1?' ×'+r.qty:''}</span>`
           : `<span style="color:#059669;font-weight:600;">Free</span>`;
-        const costCell = r.c > 0
+        const cost = r.c>0
           ? `<span style="color:#ff3d79;font-weight:700;">฿${r.c.toLocaleString()}</span>`
           : `<span style="color:#059669;">-</span>`;
-        html += `<tr style="background:${bg};border-bottom:1px solid #f0e8ff;">
-          <td style="padding:8px 10px;font-weight:600;color:#1a0a2e;">${r.displayName}</td>
-          <td style="padding:8px 10px;color:#4b5563;">${dayShort[r.day] || r.day}</td>
-          <td style="padding:8px 10px;color:#374151;font-family:monospace;">${r.time}</td>
-          <td style="padding:8px 10px;color:#4b5563;">${r.boothShort}</td>
-          <td style="padding:8px 10px;text-align:center;">${ticketCell}</td>
-          <td style="padding:8px 10px;text-align:right;">${costCell}</td>
+        h+=`<tr style="background:${bg};border-bottom:1px solid #f0e8ff;">
+          <td style="padding:7px 8px;font-weight:600;color:#1a0a2e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.displayName}</td>
+          <td style="padding:7px 8px;color:#4b5563;overflow:hidden;white-space:nowrap;">${dayShort[r.day]||r.day}</td>
+          <td style="padding:7px 8px;color:#374151;font-family:monospace;white-space:nowrap;">${r.time}</td>
+          <td style="padding:7px 8px;color:#4b5563;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.boothShort}</td>
+          <td style="padding:7px 8px;text-align:center;">${tk}</td>
+          <td style="padding:7px 8px;text-align:right;white-space:nowrap;">${cost}</td>
         </tr>`;
-        alt = !alt;
+        alt=!alt;
       });
-
-      html += `</tbody></table>`;
-      return html;
+      h+=`</tbody></table>`;
+      return h;
     }
 
-    // ── Assemble full print div ──
-    const printDiv = document.createElement('div');
-    printDiv.style.cssText = `
-      position:fixed; left:-9999px; top:0;
-      width:900px; min-width:900px; max-width:900px;
-      background:#fffaf7;
-      font-family:'Noto Sans Thai',sans-serif;
-      padding:0; margin:0; overflow:hidden;
-    `;
+    // ── Build print HTML (inner content only, no html/head/body tags) ──
+    const PRINT_W = TL_W + 48;
+    const html = `
+      <div style="width:${PRINT_W}px;background:#fffaf7;font-family:'Noto Sans Thai',sans-serif;">
 
-    printDiv.innerHTML = `
-      <!-- HEADER -->
-      <div style="background:linear-gradient(135deg,#ff6b9d,#d4a5ff);padding:28px 32px 20px;">
-        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:#fff;opacity:.8;margin-bottom:6px;text-transform:uppercase;">Fan Event Planner 🌸</div>
-        <div style="font-size:26px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:6px;">BNK48 × CGM48 — On Cloud 9 Festival</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.85);">30 พฤษภาคม – 1 มิถุนายน 2026 · MCC Hall, The Mall Lifestore Bangkae</div>
-        <div style="margin-top:12px;display:flex;gap:8px;">
-          <span style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:99px;padding:4px 14px;font-size:11px;color:#fff;font-weight:600;">รวม ${totalTickets} tickets</span>
-          <span style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:99px;padding:4px 14px;font-size:11px;color:#fff;font-weight:600;">รวมทั้งหมด ฿${total.toLocaleString()} THB</span>
-        </div>
-      </div>
-
-      <div style="padding:24px 32px;">
-
-        <!-- TIMELINE -->
-        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#7a6892;text-transform:uppercase;margin-bottom:10px;">📅 ตารางเวลา</div>
-        ${buildTimeline()}
-
-        <!-- TABLE -->
-        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#7a6892;text-transform:uppercase;margin:24px 0 10px;">🗒 รายการกิจกรรมที่เลือก</div>
-        <div style="border:1.5px solid #e9d5ff;border-radius:12px;overflow:hidden;">
-          ${buildTable()}
-        </div>
-
-        <!-- TOTAL BOX -->
-        <div style="margin-top:20px;background:linear-gradient(135deg,#1a0a2e,#2d1b4e);border-radius:16px;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <div style="font-size:13px;font-weight:700;color:#d4a5ff;margin-bottom:4px;">รวมค่าใช้จ่ายทั้งหมด</div>
-            <div style="font-size:11px;color:#a78bca;">รวม ${totalTickets} tickets จาก ${rows.length} รอบกิจกรรม</div>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-size:30px;font-weight:700;color:#ff6b9d;line-height:1;">฿${total.toLocaleString()}</div>
-            <div style="font-size:11px;color:#a78bca;margin-top:2px;">THB</div>
+        <div style="background:linear-gradient(135deg,#ff6b9d,#d4a5ff);padding:22px 24px 18px;width:${PRINT_W}px;box-sizing:border-box;">
+          <div style="font-size:8px;font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,0.8);margin-bottom:5px;text-transform:uppercase;">Fan Event Planner 🌸</div>
+          <div style="font-size:20px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:5px;">BNK48 × CGM48 — On Cloud 9 Festival</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.85);">30 พฤษภาคม – 1 มิถุนายน 2026 · MCC Hall, The Mall Lifestore Bangkae</div>
+          <div style="margin-top:10px;display:flex;gap:7px;flex-wrap:wrap;">
+            <span style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:99px;padding:3px 11px;font-size:9.5px;color:#fff;font-weight:600;">รวม ${totalTickets} tickets</span>
+            <span style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:99px;padding:3px 11px;font-size:9.5px;color:#fff;font-weight:600;">รวมทั้งหมด ฿${total.toLocaleString()} THB</span>
           </div>
         </div>
 
-        <!-- FOOTER -->
-        <div style="margin-top:16px;text-align:center;font-size:9px;color:#9ca3af;">
-          สร้างโดย BNK48 × CGM48 Fan Event Planner · ${new Date().toLocaleDateString('th-TH', {year:'numeric',month:'long',day:'numeric'})}
+        <div style="padding:18px 24px;width:${PRINT_W}px;box-sizing:border-box;">
+          <div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:#7a6892;text-transform:uppercase;margin-bottom:8px;">📅 ตารางเวลา</div>
+          ${buildTimeline()}
+
+          <div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:#7a6892;text-transform:uppercase;margin:18px 0 8px;">🗒 รายการกิจกรรมที่เลือก</div>
+          <div style="border:1.5px solid #e9d5ff;border-radius:10px;overflow:hidden;width:${TL_W}px;">
+            ${buildTable()}
+          </div>
+
+          <div style="margin-top:14px;background:linear-gradient(135deg,#1a0a2e,#2d1b4e);border-radius:12px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;width:${TL_W}px;box-sizing:border-box;">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#d4a5ff;margin-bottom:3px;">รวมค่าใช้จ่ายทั้งหมด</div>
+              <div style="font-size:9.5px;color:#a78bca;">รวม ${totalTickets} tickets จาก ${rows.length} รอบกิจกรรม</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:24px;font-weight:700;color:#ff6b9d;line-height:1;">฿${total.toLocaleString()}</div>
+              <div style="font-size:9px;color:#a78bca;margin-top:2px;">THB</div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;text-align:center;font-size:8px;color:#9ca3af;">
+            สร้างโดย BNK48 × CGM48 Fan Event Planner · ${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}
+          </div>
         </div>
 
-      </div>
-    `;
+      </div>`;
 
-    document.body.appendChild(printDiv);
+    // ── Inject directly into page body ──
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = [
+      'position:absolute',
+      'left:-99999px',
+      'top:0',
+      `width:${PRINT_W}px`,
+      'background:#fffaf7',
+      'font-family:Noto Sans Thai,sans-serif',
+      'z-index:-1',
+      'overflow:visible',
+    ].join(';');
 
-    // Wait for fonts
+    wrapper.innerHTML = html;
+    document.body.appendChild(wrapper);
+
     await document.fonts.ready;
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 600));
 
-    const canvas = await html2canvas(printDiv, {
+    const renderW = wrapper.scrollWidth;
+    const renderH = wrapper.scrollHeight;
+
+    const canvas = await html2canvas(wrapper, {
       scale: 2,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#fffaf7',
       logging: false,
-      width: 900,
-      windowWidth: 900,
+      width: renderW,
+      height: renderH,
+      windowWidth: renderW + 200,   // give extra room so nothing clips
+      scrollX: -wrapper.getBoundingClientRect().left,
+      scrollY: -wrapper.getBoundingClientRect().top,
+      x: 0,
+      y: 0,
     });
 
-    document.body.removeChild(printDiv);
+    document.body.removeChild(wrapper);
 
+    // ── Build PDF ──
     const { jsPDF } = window.jspdf;
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    const imgW = canvas.width;
-    const imgH = canvas.height;
+    const pdfW = 210; // A4 mm
+    const pdfH = 297;
+    const pxPerMm = (canvas.width / pdfW);
+    const pageHpx = pdfH * pxPerMm;
 
-    const pdfW = 210;
-    const pdfH = Math.ceil((imgH / imgW) * pdfW);
+    const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+    let pageNum = 0;
+    let remainH = canvas.height;
 
-    // If taller than A4, split into pages
-    const pageH = 297;
-    const pxPerMm = imgW / pdfW;
-    const pageHeightPx = pageH * pxPerMm;
-
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pdfW, Math.min(pdfH, pageH)] });
-
-    if(pdfH <= pageH) {
-      doc.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
-    } else {
-      // multi-page: slice canvas per page
-      let remainH = imgH;
-      let pageNum = 0;
-      while(remainH > 0) {
-        const sliceH = Math.min(pageHeightPx, remainH);
-        const sliceCanvas = document.createElement('canvas');
-        sliceCanvas.width = imgW;
-        sliceCanvas.height = sliceH;
-        const ctx = sliceCanvas.getContext('2d');
-        ctx.drawImage(canvas, 0, pageNum * pageHeightPx, imgW, sliceH, 0, 0, imgW, sliceH);
-        const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.95);
-        if(pageNum > 0) doc.addPage([pdfW, pageH]);
-        const sliceMmH = (sliceH / pxPerMm);
-        doc.addImage(sliceData, 'JPEG', 0, 0, pdfW, sliceMmH);
-        remainH -= sliceH;
-        pageNum++;
-      }
+    while(remainH > 0) {
+      const sliceH = Math.min(pageHpx, remainH);
+      const sc = document.createElement('canvas');
+      sc.width = canvas.width;
+      sc.height = Math.ceil(sliceH);
+      sc.getContext('2d').drawImage(canvas, 0, pageNum*pageHpx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+      if(pageNum > 0) doc.addPage('a4','portrait');
+      doc.addImage(sc.toDataURL('image/jpeg',0.95), 'JPEG', 0, 0, pdfW, sliceH/pxPerMm);
+      remainH -= sliceH;
+      pageNum++;
     }
 
     doc.save('BNK48-CGM48-OnCloud9-MySchedule.pdf');
